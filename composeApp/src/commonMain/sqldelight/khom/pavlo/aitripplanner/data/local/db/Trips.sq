@@ -1,0 +1,144 @@
+CREATE TABLE TripEntity (
+  id TEXT NOT NULL PRIMARY KEY,
+  city TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  hero_note TEXT NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  distance_km REAL NOT NULL,
+  is_favorite INTEGER NOT NULL,
+  is_offline_only INTEGER NOT NULL,
+  is_pending_sync INTEGER NOT NULL,
+  remote_version INTEGER NOT NULL,
+  updated_at_epoch_ms INTEGER NOT NULL
+);
+
+CREATE TABLE DayEntity (
+  id TEXT NOT NULL PRIMARY KEY,
+  trip_id TEXT NOT NULL,
+  day_index INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  distance_km REAL NOT NULL,
+  is_expanded INTEGER NOT NULL
+);
+
+CREATE TABLE PlaceEntity (
+  id TEXT NOT NULL PRIMARY KEY,
+  day_id TEXT NOT NULL,
+  sort_index INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  address TEXT NOT NULL,
+  visit_minutes INTEGER NOT NULL
+);
+
+CREATE TABLE SyncQueueEntity (
+  id TEXT NOT NULL PRIMARY KEY,
+  entity_id TEXT NOT NULL,
+  entity_type TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  state TEXT NOT NULL,
+  attempt_count INTEGER NOT NULL,
+  base_version INTEGER,
+  conflict_token TEXT,
+  last_error TEXT,
+  created_at_epoch_ms INTEGER NOT NULL,
+  updated_at_epoch_ms INTEGER NOT NULL
+);
+
+CREATE TABLE AppSettingsEntity (
+  id INTEGER NOT NULL PRIMARY KEY,
+  app_language TEXT NOT NULL
+);
+
+seedSettings:
+INSERT OR IGNORE INTO AppSettingsEntity(id, app_language) VALUES (1, 'EN');
+
+selectAppLanguage:
+SELECT app_language FROM AppSettingsEntity WHERE id = 1;
+
+updateAppLanguage:
+INSERT OR REPLACE INTO AppSettingsEntity(id, app_language) VALUES (1, ?);
+
+selectTrips:
+SELECT * FROM TripEntity ORDER BY updated_at_epoch_ms DESC;
+
+selectTripCount:
+SELECT COUNT(*) FROM TripEntity;
+
+selectAllDays:
+SELECT * FROM DayEntity ORDER BY day_index ASC;
+
+selectAllPlaces:
+SELECT * FROM PlaceEntity ORDER BY sort_index ASC;
+
+selectDayIdsByTripId:
+SELECT id FROM DayEntity WHERE trip_id = ?;
+
+insertTrip:
+INSERT OR REPLACE INTO TripEntity(
+  id, city, title, summary, hero_note, duration_minutes, distance_km,
+  is_favorite, is_offline_only, is_pending_sync, remote_version, updated_at_epoch_ms
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+insertDay:
+INSERT OR REPLACE INTO DayEntity(
+  id, trip_id, day_index, title, summary, duration_minutes, distance_km, is_expanded
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+insertPlace:
+INSERT OR REPLACE INTO PlaceEntity(
+  id, day_id, sort_index, name, address, visit_minutes
+) VALUES (?, ?, ?, ?, ?, ?);
+
+deleteTripById:
+DELETE FROM TripEntity WHERE id = ?;
+
+deleteDaysByTripId:
+DELETE FROM DayEntity WHERE trip_id = ?;
+
+deletePlacesByDayId:
+DELETE FROM PlaceEntity WHERE day_id = ?;
+
+deleteSyncItemsByEntityId:
+DELETE FROM SyncQueueEntity WHERE entity_id = ?;
+
+deleteAllPlaces:
+DELETE FROM PlaceEntity;
+
+deleteAllDays:
+DELETE FROM DayEntity;
+
+deleteAllTrips:
+DELETE FROM TripEntity;
+
+setDayExpanded:
+UPDATE DayEntity SET is_expanded = ? WHERE id = ?;
+
+enqueueSyncItem:
+INSERT OR REPLACE INTO SyncQueueEntity(
+  id, entity_id, entity_type, operation, payload_json, state, attempt_count,
+  base_version, conflict_token, last_error, created_at_epoch_ms, updated_at_epoch_ms
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectPendingSyncItems:
+SELECT * FROM SyncQueueEntity WHERE state = 'PENDING' OR state = 'RETRY' ORDER BY created_at_epoch_ms ASC;
+
+deleteSyncItem:
+DELETE FROM SyncQueueEntity WHERE id = ?;
+
+markSyncRetry:
+UPDATE SyncQueueEntity SET
+  state = ?,
+  attempt_count = ?,
+  last_error = ?,
+  updated_at_epoch_ms = ?
+WHERE id = ?;
+
+markTripSynced:
+UPDATE TripEntity SET
+  is_pending_sync = ?,
+  updated_at_epoch_ms = ?
+WHERE id = ?;
