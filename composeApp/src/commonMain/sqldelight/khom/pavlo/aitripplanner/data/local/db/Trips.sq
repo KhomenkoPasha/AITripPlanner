@@ -29,8 +29,30 @@ CREATE TABLE PlaceEntity (
   day_id TEXT NOT NULL,
   sort_index INTEGER NOT NULL,
   name TEXT NOT NULL,
+  latitude REAL,
+  longitude REAL,
   address TEXT NOT NULL,
-  visit_minutes INTEGER NOT NULL
+  visit_minutes INTEGER NOT NULL,
+  note TEXT NOT NULL,
+  category TEXT,
+  short_description TEXT NOT NULL,
+  full_description TEXT NOT NULL,
+  why_included TEXT NOT NULL,
+  tips_text TEXT NOT NULL,
+  opening_hours_text TEXT NOT NULL,
+  best_time_to_visit TEXT NOT NULL,
+  is_open_now INTEGER,
+  website_url TEXT,
+  photo_url TEXT,
+  photo_urls_text TEXT NOT NULL,
+  photo_attribution TEXT,
+  price_level TEXT,
+  visit_notes TEXT NOT NULL,
+  neighborhood TEXT NOT NULL,
+  stop_index INTEGER,
+  previous_place_name TEXT,
+  next_place_name TEXT,
+  is_completed INTEGER NOT NULL
 );
 
 CREATE TABLE SyncQueueEntity (
@@ -65,9 +87,6 @@ INSERT OR REPLACE INTO AppSettingsEntity(id, app_language) VALUES (1, ?);
 selectTrips:
 SELECT * FROM TripEntity ORDER BY updated_at_epoch_ms DESC;
 
-selectTripCount:
-SELECT COUNT(*) FROM TripEntity;
-
 selectAllDays:
 SELECT * FROM DayEntity ORDER BY day_index ASC;
 
@@ -90,8 +109,11 @@ INSERT OR REPLACE INTO DayEntity(
 
 insertPlace:
 INSERT OR REPLACE INTO PlaceEntity(
-  id, day_id, sort_index, name, address, visit_minutes
-) VALUES (?, ?, ?, ?, ?, ?);
+  id, day_id, sort_index, name, latitude, longitude, address, visit_minutes, note, category,
+  short_description, full_description, why_included, tips_text, opening_hours_text, best_time_to_visit,
+  is_open_now, website_url, photo_url, photo_urls_text, photo_attribution, price_level, visit_notes,
+  neighborhood, stop_index, previous_place_name, next_place_name, is_completed
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 deleteTripById:
 DELETE FROM TripEntity WHERE id = ?;
@@ -104,6 +126,94 @@ DELETE FROM PlaceEntity WHERE day_id = ?;
 
 deleteSyncItemsByEntityId:
 DELETE FROM SyncQueueEntity WHERE entity_id = ?;
+
+deleteLegacyMockPlaces:
+DELETE FROM PlaceEntity
+WHERE day_id IN (
+  SELECT id FROM DayEntity
+  WHERE trip_id IN (
+    SELECT id FROM TripEntity
+    WHERE (
+      city = 'Rome' AND
+      title = 'Rome city highlights' AND
+      summary = 'A calm 3-day route shaped around iconic sites, easy walks, and golden-hour breaks.' AND
+      hero_note = 'Classic monuments, soft neighborhood pacing, and enough room to slow down.'
+    ) OR (
+      city = 'Kyoto' AND
+      title = 'Quiet temples and gardens' AND
+      summary = 'Temple mornings, tea houses, and a compact walking route.' AND
+      hero_note = 'A soft, reflective city break with low-friction transitions.'
+    ) OR (
+      city = 'Lisbon' AND
+      title = 'Coastal neighborhoods' AND
+      summary = 'Viewpoints, trams, tiled streets, and sunset pacing.' AND
+      hero_note = 'A bright route mixing landmarks and softer local rhythm.'
+    )
+  )
+);
+
+deleteLegacyMockDays:
+DELETE FROM DayEntity
+WHERE trip_id IN (
+  SELECT id FROM TripEntity
+  WHERE (
+    city = 'Rome' AND
+    title = 'Rome city highlights' AND
+    summary = 'A calm 3-day route shaped around iconic sites, easy walks, and golden-hour breaks.' AND
+    hero_note = 'Classic monuments, soft neighborhood pacing, and enough room to slow down.'
+  ) OR (
+    city = 'Kyoto' AND
+    title = 'Quiet temples and gardens' AND
+    summary = 'Temple mornings, tea houses, and a compact walking route.' AND
+    hero_note = 'A soft, reflective city break with low-friction transitions.'
+  ) OR (
+    city = 'Lisbon' AND
+    title = 'Coastal neighborhoods' AND
+    summary = 'Viewpoints, trams, tiled streets, and sunset pacing.' AND
+    hero_note = 'A bright route mixing landmarks and softer local rhythm.'
+  )
+);
+
+deleteLegacyMockSyncItems:
+DELETE FROM SyncQueueEntity
+WHERE entity_id IN (
+  SELECT id FROM TripEntity
+  WHERE (
+    city = 'Rome' AND
+    title = 'Rome city highlights' AND
+    summary = 'A calm 3-day route shaped around iconic sites, easy walks, and golden-hour breaks.' AND
+    hero_note = 'Classic monuments, soft neighborhood pacing, and enough room to slow down.'
+  ) OR (
+    city = 'Kyoto' AND
+    title = 'Quiet temples and gardens' AND
+    summary = 'Temple mornings, tea houses, and a compact walking route.' AND
+    hero_note = 'A soft, reflective city break with low-friction transitions.'
+  ) OR (
+    city = 'Lisbon' AND
+    title = 'Coastal neighborhoods' AND
+    summary = 'Viewpoints, trams, tiled streets, and sunset pacing.' AND
+    hero_note = 'A bright route mixing landmarks and softer local rhythm.'
+  )
+);
+
+deleteLegacyMockTrips:
+DELETE FROM TripEntity
+WHERE (
+  city = 'Rome' AND
+  title = 'Rome city highlights' AND
+  summary = 'A calm 3-day route shaped around iconic sites, easy walks, and golden-hour breaks.' AND
+  hero_note = 'Classic monuments, soft neighborhood pacing, and enough room to slow down.'
+) OR (
+  city = 'Kyoto' AND
+  title = 'Quiet temples and gardens' AND
+  summary = 'Temple mornings, tea houses, and a compact walking route.' AND
+  hero_note = 'A soft, reflective city break with low-friction transitions.'
+) OR (
+  city = 'Lisbon' AND
+  title = 'Coastal neighborhoods' AND
+  summary = 'Viewpoints, trams, tiled streets, and sunset pacing.' AND
+  hero_note = 'A bright route mixing landmarks and softer local rhythm.'
+);
 
 deleteAllPlaces:
 DELETE FROM PlaceEntity;

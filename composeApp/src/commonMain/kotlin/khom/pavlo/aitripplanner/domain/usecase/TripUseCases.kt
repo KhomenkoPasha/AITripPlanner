@@ -25,12 +25,6 @@ class ObserveSyncStateUseCase(
     operator fun invoke(): Flow<AppSyncState> = repository.observeSyncState()
 }
 
-class GenerateTripPlanUseCase(
-    private val repository: TripRepository,
-) {
-    suspend operator fun invoke(prompt: String): Trip = repository.generateTrip(prompt)
-}
-
 class CreateTripUseCase(
     private val repository: TripRepository,
 ) {
@@ -49,10 +43,24 @@ class DeleteTripUseCase(
     suspend operator fun invoke(tripId: String) = repository.deleteTrip(tripId)
 }
 
-class EnsureSeedDataUseCase(
+class RemovePlaceUseCase(
     private val repository: TripRepository,
 ) {
-    suspend operator fun invoke() = repository.ensureSeedData()
+    suspend operator fun invoke(placeId: String) = repository.removePlace(placeId)
+}
+
+class SetPlaceCompletedUseCase(
+    private val repository: TripRepository,
+) {
+    suspend operator fun invoke(placeId: String, completed: Boolean) {
+        repository.setPlaceCompleted(placeId, completed)
+    }
+}
+
+class RemoveMockDataUseCase(
+    private val repository: TripRepository,
+) {
+    suspend operator fun invoke() = repository.removeMockData()
 }
 
 class SetDayExpandedUseCase(

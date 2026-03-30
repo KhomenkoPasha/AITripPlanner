@@ -9,3 +9,8 @@ expect class SqlDriverFactory {
 expect object PlatformTime {
     fun nowMillis(): Long
 }
+
+expect object PlatformMapLauncher {
+    fun showOnMap(label: String, latitude: Double, longitude: Double): Boolean
+    fun openInMaps(label: String, latitude: Double, longitude: Double): Boolean
+}

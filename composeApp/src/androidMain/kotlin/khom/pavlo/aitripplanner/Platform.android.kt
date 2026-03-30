@@ -7,3 +7,4 @@ class AndroidPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
+actual fun localBackendBaseUrl(): String = "https://ktor-travel-backend-production.up.railway.app"

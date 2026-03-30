@@ -20,6 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.Budget
+import khom.pavlo.aitripplanner.domain.model.CitySuggestion
+import khom.pavlo.aitripplanner.domain.model.CompanionType
+import khom.pavlo.aitripplanner.domain.model.Interest
+import khom.pavlo.aitripplanner.domain.model.Pace
+import khom.pavlo.aitripplanner.domain.model.TravelMode
+import khom.pavlo.aitripplanner.domain.model.TripPreference
 import khom.pavlo.aitripplanner.ui.animation.StaggeredAppearance
 import khom.pavlo.aitripplanner.ui.components.EmptyStateView
 import khom.pavlo.aitripplanner.ui.components.GeneratedTripCard
@@ -35,6 +42,7 @@ import khom.pavlo.aitripplanner.ui.preview.PreviewTrips
 import khom.pavlo.aitripplanner.ui.strings.appStrings
 import khom.pavlo.aitripplanner.ui.theme.AppTheme
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
+import khom.pavlo.aitripplanner.presentation.label
 
 @Composable
 fun PlannerScreen(
@@ -42,10 +50,21 @@ fun PlannerScreen(
     selectedLanguage: AppLanguage,
     onLanguageSelected: (AppLanguage) -> Unit,
     onCityChange: (String) -> Unit,
+    onCitySuggestionClick: (CitySuggestion) -> Unit,
     onTitleChange: (String) -> Unit,
-    onSummaryChange: (String) -> Unit,
+    onPromptChange: (String) -> Unit,
+    onDaysChange: (String) -> Unit,
+    onPlaceCountChange: (String) -> Unit,
+    onWalkingMinutesPerDayChange: (String) -> Unit,
+    onTravelModeChange: (TravelMode) -> Unit,
+    onInterestToggle: (Interest) -> Unit,
+    onPaceSelected: (Pace) -> Unit,
+    onBudgetSelected: (Budget) -> Unit,
+    onCompanionTypeSelected: (CompanionType) -> Unit,
+    onPreferenceToggle: (TripPreference) -> Unit,
+    onWithChildrenToggle: () -> Unit,
     onHeroNoteChange: (String) -> Unit,
-    onSaveClick: () -> Unit,
+    onSaveClick: (AppLanguage) -> Unit,
     onBackClick: () -> Unit,
     onTripClick: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -53,6 +72,12 @@ fun PlannerScreen(
 ) {
     val strings = appStrings()
     val isEdit = state.mode is PlannerMode.Edit
+    val travelModeOptions = rememberTravelModeOptions(selectedLanguage)
+    val interestOptions = rememberInterestOptions(selectedLanguage)
+    val paceOptions = rememberPaceOptions(selectedLanguage)
+    val budgetOptions = rememberBudgetOptions(selectedLanguage)
+    val companionOptions = rememberCompanionOptions(selectedLanguage)
+    val preferenceOptions = rememberPreferenceOptions(selectedLanguage)
 
     TravelAppScaffold(
         modifier = modifier,
@@ -125,20 +150,62 @@ fun PlannerScreen(
                     } else {
                         PromptInputCard(
                             city = state.city,
+                            citySuggestions = state.citySuggestions,
+                            isCitySuggestionsLoading = state.isCitySuggestionsLoading,
+                            shouldShowCitySuggestions = state.shouldShowCitySuggestions,
                             tripTitle = state.title,
-                            summary = state.summary,
+                            prompt = state.prompt,
+                            days = state.days,
+                            placeCount = state.placeCount,
+                            walkingMinutesPerDay = state.walkingMinutesPerDay,
+                            travelMode = state.travelMode,
+                            travelModeOptions = travelModeOptions,
                             heroNote = state.heroNote,
+                            selectedInterests = state.selectedInterests,
+                            selectedPace = state.selectedPace,
+                            selectedBudget = state.selectedBudget,
+                            selectedCompanionType = state.selectedCompanionType,
+                            selectedPreferences = state.selectedPreferences,
+                            withChildren = state.withChildren,
+                            interestOptions = interestOptions,
+                            paceOptions = paceOptions,
+                            budgetOptions = budgetOptions,
+                            companionOptions = companionOptions,
+                            preferenceOptions = preferenceOptions,
                             cityLabel = strings.cityFieldLabel,
                             tripTitleLabel = strings.tripTitleFieldLabel,
-                            summaryLabel = strings.summaryFieldLabel,
+                            promptLabel = strings.promptFieldLabel,
+                            daysLabel = strings.daysFieldLabel,
+                            placeCountLabel = strings.placeCountFieldLabel,
+                            walkingMinutesPerDayLabel = strings.walkingMinutesPerDayFieldLabel,
                             heroNoteLabel = strings.heroNoteFieldLabel,
+                            interestsTitle = strings.interestsTitle,
+                            paceTitle = strings.paceTitle,
+                            budgetTitle = strings.budgetTitle,
+                            tripFormatTitle = strings.tripFormatTitle,
+                            preferencesTitle = strings.preferencesTitle,
+                            withChildrenLabel = strings.withChildrenLabel,
+                            quickFiltersHelperText = strings.quickFiltersHelperText,
                             helperText = strings.helperText,
+                            citySuggestionsLoadingLabel = strings.citySuggestionsLoadingLabel,
+                            citySuggestionsEmptyLabel = strings.citySuggestionsEmptyLabel,
                             actionLabel = if (isEdit) strings.editTripAction else strings.createTripAction,
                             onCityChange = onCityChange,
+                            onCitySuggestionClick = onCitySuggestionClick,
                             onTripTitleChange = onTitleChange,
-                            onSummaryChange = onSummaryChange,
+                            onPromptChange = onPromptChange,
+                            onDaysChange = onDaysChange,
+                            onPlaceCountChange = onPlaceCountChange,
+                            onWalkingMinutesPerDayChange = onWalkingMinutesPerDayChange,
+                            onTravelModeChange = onTravelModeChange,
+                            onInterestToggle = onInterestToggle,
+                            onPaceSelected = onPaceSelected,
+                            onBudgetSelected = onBudgetSelected,
+                            onCompanionTypeSelected = onCompanionTypeSelected,
+                            onPreferenceToggle = onPreferenceToggle,
+                            onWithChildrenToggle = onWithChildrenToggle,
                             onHeroNoteChange = onHeroNoteChange,
-                            onSubmit = onSaveClick,
+                            onSubmit = { onSaveClick(selectedLanguage) },
                             isLoading = state.isSaving,
                             errorMessage = state.saveError,
                         )
@@ -205,8 +272,19 @@ private fun PlannerScreenPreview() {
             selectedLanguage = AppLanguage.EN,
             onLanguageSelected = {},
             onCityChange = {},
+            onCitySuggestionClick = {},
             onTitleChange = {},
-            onSummaryChange = {},
+            onPromptChange = {},
+            onDaysChange = {},
+            onPlaceCountChange = {},
+            onWalkingMinutesPerDayChange = {},
+            onTravelModeChange = {},
+            onInterestToggle = {},
+            onPaceSelected = {},
+            onBudgetSelected = {},
+            onCompanionTypeSelected = {},
+            onPreferenceToggle = {},
+            onWithChildrenToggle = {},
             onHeroNoteChange = {},
             onSaveClick = {},
             onBackClick = {},
@@ -214,3 +292,56 @@ private fun PlannerScreenPreview() {
         )
     }
 }
+
+@Composable
+private fun rememberTravelModeOptions(language: AppLanguage): List<Pair<TravelMode, String>> = listOf(
+    TravelMode.WALKING to TravelMode.WALKING.label(language),
+    TravelMode.CAR to TravelMode.CAR.label(language),
+    TravelMode.PUBLIC_TRANSPORT to TravelMode.PUBLIC_TRANSPORT.label(language),
+)
+
+@Composable
+private fun rememberInterestOptions(language: AppLanguage): List<Pair<Interest, String>> = listOf(
+    Interest.MUSEUMS to Interest.MUSEUMS.label(language),
+    Interest.HISTORY to Interest.HISTORY.label(language),
+    Interest.FOOD to Interest.FOOD.label(language),
+    Interest.CAFE to Interest.CAFE.label(language),
+    Interest.VIEWS to Interest.VIEWS.label(language),
+    Interest.ARCHITECTURE to Interest.ARCHITECTURE.label(language),
+    Interest.NATURE to Interest.NATURE.label(language),
+    Interest.NIGHTLIFE to Interest.NIGHTLIFE.label(language),
+)
+
+@Composable
+private fun rememberPaceOptions(language: AppLanguage): List<Pair<Pace, String>> = listOf(
+    Pace.RELAXED to Pace.RELAXED.label(language),
+    Pace.NORMAL to Pace.NORMAL.label(language),
+    Pace.INTENSIVE to Pace.INTENSIVE.label(language),
+)
+
+@Composable
+private fun rememberBudgetOptions(language: AppLanguage): List<Pair<Budget, String>> = listOf(
+    Budget.BUDGET to Budget.BUDGET.label(language),
+    Budget.MEDIUM to Budget.MEDIUM.label(language),
+    Budget.PREMIUM to Budget.PREMIUM.label(language),
+)
+
+@Composable
+private fun rememberCompanionOptions(language: AppLanguage): List<Pair<CompanionType, String>> = listOf(
+    CompanionType.COUPLE to CompanionType.COUPLE.label(language),
+    CompanionType.SOLO to CompanionType.SOLO.label(language),
+)
+
+@Composable
+private fun rememberPreferenceOptions(language: AppLanguage): List<Pair<TripPreference, String>> = listOf(
+    TripPreference.MUST_SEE to TripPreference.MUST_SEE.label(language),
+    TripPreference.LOCAL_SPOTS to TripPreference.LOCAL_SPOTS.label(language),
+    TripPreference.HIDDEN_GEMS to TripPreference.HIDDEN_GEMS.label(language),
+    TripPreference.NO_CROWDS to TripPreference.NO_CROWDS.label(language),
+    TripPreference.NO_RUSH to TripPreference.NO_RUSH.label(language),
+    TripPreference.SUNSET to TripPreference.SUNSET.label(language),
+    TripPreference.RAINY_DAY to TripPreference.RAINY_DAY.label(language),
+    TripPreference.SHORT_ROUTE to TripPreference.SHORT_ROUTE.label(language),
+    TripPreference.FREE_PLACES to TripPreference.FREE_PLACES.label(language),
+    TripPreference.INSTAGRAM_SPOTS to TripPreference.INSTAGRAM_SPOTS.label(language),
+)

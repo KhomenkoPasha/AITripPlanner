@@ -1,6 +1,8 @@
 package khom.pavlo.aitripplanner
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +19,7 @@ import khom.pavlo.aitripplanner.core.platform.PlatformLanguageManager
 import khom.pavlo.aitripplanner.presentation.app.AppViewModel
 import khom.pavlo.aitripplanner.presentation.details.TripDetailsNavigationEvent
 import khom.pavlo.aitripplanner.presentation.details.TripDetailsViewModel
+import khom.pavlo.aitripplanner.presentation.place.PlaceDetailsViewModel
 import khom.pavlo.aitripplanner.presentation.planner.PlannerNavigationEvent
 import khom.pavlo.aitripplanner.presentation.planner.PlannerViewModel
 import khom.pavlo.aitripplanner.presentation.saved.SavedTripsViewModel
@@ -24,6 +27,7 @@ import khom.pavlo.aitripplanner.ui.components.BottomNavigationBar
 import khom.pavlo.aitripplanner.ui.navigation.AppRoute
 import khom.pavlo.aitripplanner.ui.navigation.BottomTab
 import khom.pavlo.aitripplanner.ui.screens.details.TripDetailsScreen
+import khom.pavlo.aitripplanner.ui.screens.place.PlaceDetailsScreen
 import khom.pavlo.aitripplanner.ui.screens.planner.PlannerScreen
 import khom.pavlo.aitripplanner.ui.screens.saved.SavedTripsScreen
 import khom.pavlo.aitripplanner.ui.strings.appStrings
@@ -88,14 +92,37 @@ fun App() {
         AnimatedContent(
             targetState = appState.currentRoute,
             transitionSpec = {
-                (slideInHorizontally(
-                    animationSpec = tween(260),
-                    initialOffsetX = { width -> width / 8 },
-                ) + fadeIn(animationSpec = tween(260))) togetherWith
-                    (slideOutHorizontally(
-                        animationSpec = tween(220),
-                        targetOffsetX = { width -> -width / 10 },
-                    ) + fadeOut(animationSpec = tween(220)))
+                when {
+                    initialState.isTopLevelRoute() && targetState.isTopLevelRoute() -> {
+                        ContentTransform(
+                            targetContentEnter = fadeIn(animationSpec = tween(120)),
+                            initialContentExit = fadeOut(animationSpec = tween(90)),
+                            sizeTransform = SizeTransform(clip = false),
+                        )
+                    }
+
+                    targetState.navigationDepth() > initialState.navigationDepth() -> {
+                        (slideInHorizontally(
+                            animationSpec = tween(220),
+                            initialOffsetX = { width -> width / 10 },
+                        ) + fadeIn(animationSpec = tween(180))) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(180),
+                                targetOffsetX = { width -> -width / 14 },
+                            ) + fadeOut(animationSpec = tween(140)))
+                    }
+
+                    else -> {
+                        (slideInHorizontally(
+                            animationSpec = tween(200),
+                            initialOffsetX = { width -> -width / 14 },
+                        ) + fadeIn(animationSpec = tween(170))) togetherWith
+                            (slideOutHorizontally(
+                                animationSpec = tween(170),
+                                targetOffsetX = { width -> width / 10 },
+                            ) + fadeOut(animationSpec = tween(130)))
+                    }
+                }
             },
             label = "root_destination",
         ) { currentRoute ->
@@ -105,8 +132,19 @@ fun App() {
                     selectedLanguage = appState.selectedLanguage,
                     onLanguageSelected = appViewModel::setLanguage,
                     onCityChange = plannerViewModel::onCityChange,
+                    onCitySuggestionClick = plannerViewModel::onCitySuggestionSelected,
                     onTitleChange = plannerViewModel::onTitleChange,
-                    onSummaryChange = plannerViewModel::onSummaryChange,
+                    onPromptChange = plannerViewModel::onPromptChange,
+                    onDaysChange = plannerViewModel::onDaysChange,
+                    onPlaceCountChange = plannerViewModel::onPlaceCountChange,
+                    onWalkingMinutesPerDayChange = plannerViewModel::onWalkingMinutesPerDayChange,
+                    onTravelModeChange = plannerViewModel::onTravelModeChange,
+                    onInterestToggle = plannerViewModel::onInterestToggle,
+                    onPaceSelected = plannerViewModel::onPaceSelected,
+                    onBudgetSelected = plannerViewModel::onBudgetSelected,
+                    onCompanionTypeSelected = plannerViewModel::onCompanionTypeSelected,
+                    onPreferenceToggle = plannerViewModel::onPreferenceToggle,
+                    onWithChildrenToggle = plannerViewModel::onWithChildrenToggle,
                     onHeroNoteChange = plannerViewModel::onHeroNoteChange,
                     onSaveClick = plannerViewModel::onSaveTrip,
                     onBackClick = appViewModel::closeEditTrip,
@@ -158,10 +196,62 @@ fun App() {
                         onDismissDelete = detailsViewModel::hideDeleteDialog,
                         onConfirmDelete = detailsViewModel::confirmDelete,
                         onToggleDay = detailsViewModel::onToggleDay,
+                        onPlaceCompletionChange = detailsViewModel::onPlaceCompletionChange,
+                        onDeletePlace = detailsViewModel::onDeletePlace,
+                        onOpenPlace = { dayId, placeId ->
+                            appViewModel.openPlaceDetails(
+                                tripId = currentRoute.tripId,
+                                dayId = dayId,
+                                placeId = placeId,
+                                originTab = currentRoute.originTab,
+                            )
+                        },
+                        bottomBar = bottomBar,
+                    )
+                }
+
+                is AppRoute.PlaceDetails -> {
+                    val placeDetailsViewModel = remember(
+                        currentRoute.tripId,
+                        currentRoute.dayId,
+                        currentRoute.placeId,
+                    ) {
+                        koin.get<PlaceDetailsViewModel> {
+                            parametersOf(currentRoute.tripId, currentRoute.dayId, currentRoute.placeId)
+                        }
+                    }
+                    DisposableEffect(placeDetailsViewModel) {
+                        onDispose { placeDetailsViewModel.clear() }
+                    }
+                    val placeDetailsState by placeDetailsViewModel.state.collectAsState()
+
+                    PlaceDetailsScreen(
+                        state = placeDetailsState,
+                        onBackClick = {
+                            appViewModel.openTripDetails(
+                                tripId = currentRoute.tripId,
+                                originTab = currentRoute.originTab,
+                            )
+                        },
+                        onVisitedChange = placeDetailsViewModel::onVisitedChange,
                         bottomBar = bottomBar,
                     )
                 }
             }
         }
     }
+}
+
+private fun AppRoute.isTopLevelRoute(): Boolean = when (this) {
+    is AppRoute.Planner -> true
+    AppRoute.MyTrips -> true
+    is AppRoute.TripDetails -> false
+    is AppRoute.PlaceDetails -> false
+}
+
+private fun AppRoute.navigationDepth(): Int = when (this) {
+    is AppRoute.Planner -> 0
+    AppRoute.MyTrips -> 0
+    is AppRoute.TripDetails -> 1
+    is AppRoute.PlaceDetails -> 2
 }

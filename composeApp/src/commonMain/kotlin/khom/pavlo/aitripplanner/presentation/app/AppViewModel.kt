@@ -2,6 +2,7 @@ package khom.pavlo.aitripplanner.presentation.app
 
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
 import khom.pavlo.aitripplanner.domain.usecase.ObserveAppLanguageUseCase
+import khom.pavlo.aitripplanner.domain.usecase.RemoveMockDataUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetAppLanguageUseCase
 import khom.pavlo.aitripplanner.presentation.base.Presenter
 import khom.pavlo.aitripplanner.ui.navigation.AppRoute
@@ -26,11 +27,15 @@ data class AppShellState(
 class AppViewModel(
     private val observeAppLanguage: ObserveAppLanguageUseCase,
     private val setAppLanguage: SetAppLanguageUseCase,
+    private val removeMockData: RemoveMockDataUseCase,
 ) : Presenter() {
     private val mutableState = MutableStateFlow(AppShellState())
     val state: StateFlow<AppShellState> = mutableState.asStateFlow()
 
     init {
+        scope.launch {
+            removeMockData()
+        }
         scope.launch {
             observeAppLanguage().collect { language ->
                 mutableState.update { it.copy(selectedLanguage = language) }
@@ -70,6 +75,25 @@ class AppViewModel(
         mutableState.update {
             it.copy(
                 currentRoute = AppRoute.TripDetails(tripId, originTab),
+                editOriginRoute = null,
+            )
+        }
+    }
+
+    fun openPlaceDetails(
+        tripId: String,
+        dayId: String,
+        placeId: String,
+        originTab: BottomTab,
+    ) {
+        mutableState.update {
+            it.copy(
+                currentRoute = AppRoute.PlaceDetails(
+                    tripId = tripId,
+                    dayId = dayId,
+                    placeId = placeId,
+                    originTab = originTab,
+                ),
                 editOriginRoute = null,
             )
         }

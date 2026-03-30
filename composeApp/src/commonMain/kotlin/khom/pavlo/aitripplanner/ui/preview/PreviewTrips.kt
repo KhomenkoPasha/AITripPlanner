@@ -2,12 +2,16 @@ package khom.pavlo.aitripplanner.ui.preview
 
 import khom.pavlo.aitripplanner.presentation.saved.SavedTripsScreenState
 import khom.pavlo.aitripplanner.ui.model.DayItineraryUiModel
+import khom.pavlo.aitripplanner.ui.model.PlaceDetailsUiModel
+import khom.pavlo.aitripplanner.ui.model.PlaceGalleryImageUiModel
 import khom.pavlo.aitripplanner.ui.model.PlaceUiModel
+import khom.pavlo.aitripplanner.ui.model.RouteContextUiModel
 import khom.pavlo.aitripplanner.ui.model.RouteSummaryUiModel
 import khom.pavlo.aitripplanner.ui.model.TripDetailsUiModel
 import khom.pavlo.aitripplanner.ui.model.TripOverviewUiModel
 import khom.pavlo.aitripplanner.ui.navigation.PlannerMode
 import khom.pavlo.aitripplanner.ui.screens.details.TripDetailsScreenState
+import khom.pavlo.aitripplanner.ui.screens.place.PlaceDetailsScreenState
 import khom.pavlo.aitripplanner.ui.screens.planner.PlannerScreenState
 
 object PreviewTrips {
@@ -45,11 +49,11 @@ object PreviewTrips {
     )
 
     val romePlacesDay1 = listOf(
-        PlaceUiModel("Colosseum", "Piazza del Colosseo, 1", "1h 30m"),
-        PlaceUiModel("Roman Forum", "Via della Salara Vecchia, 5/6", "1h 15m"),
-        PlaceUiModel("Pantheon", "Piazza della Rotonda", "45m"),
-        PlaceUiModel("Trevi Fountain", "Piazza di Trevi", "30m"),
-        PlaceUiModel("Piazza Navona", "Piazza Navona", "50m"),
+        PlaceUiModel("colosseum", "Colosseum", "Piazza del Colosseo, 1", "1h 30m", "Historic amphitheater and one of Rome's core landmarks.", "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80", "Unsplash", true),
+        PlaceUiModel("roman-forum", "Roman Forum", "Via della Salara Vecchia, 5/6", "1h 15m", "Ruins and public spaces from ancient Rome.", null, null, false),
+        PlaceUiModel("pantheon", "Pantheon", "Piazza della Rotonda", "45m", "Iconic dome, lively square, and strong architectural contrast.", "https://images.unsplash.com/photo-1529154036614-a60975f5c760?auto=format&fit=crop&w=1200&q=80", "Unsplash", false),
+        PlaceUiModel("trevi-fountain", "Trevi Fountain", "Piazza di Trevi", "30m", "Short scenic stop in a dense historic area.", null, null, false),
+        PlaceUiModel("piazza-navona", "Piazza Navona", "Piazza Navona", "50m", "Baroque square with cafes and a slower evening rhythm.", null, null, false),
     )
 
     val romeDayCards = listOf(
@@ -72,10 +76,10 @@ object PreviewTrips {
             distanceLabel = "3.1 km",
             isExpanded = false,
             places = listOf(
-                PlaceUiModel("Villa Borghese", "Piazzale Napoleone I", "1h 20m"),
-                PlaceUiModel("Galleria Borghese", "Piazzale Scipione Borghese, 5", "1h 30m"),
-                PlaceUiModel("Spanish Steps", "Piazza di Spagna", "35m"),
-                PlaceUiModel("Via Margutta", "Via Margutta", "30m"),
+                PlaceUiModel("villa-borghese", "Villa Borghese", "Piazzale Napoleone I", "1h 20m", "Open green space with broad walking paths.", null, null, false),
+                PlaceUiModel("galleria-borghese", "Galleria Borghese", "Piazzale Scipione Borghese, 5", "1h 30m", "Focused museum visit with a denser cultural stop.", null, null, false),
+                PlaceUiModel("spanish-steps", "Spanish Steps", "Piazza di Spagna", "35m", "Compact scenic landmark in the central district.", null, null, false),
+                PlaceUiModel("via-margutta", "Via Margutta", "Via Margutta", "30m", "Quiet street for a slower finish to the day.", null, null, false),
             ),
         ),
     )
@@ -94,13 +98,67 @@ object PreviewTrips {
         days = romeDayCards,
     )
 
+    val pantheonDetails = PlaceDetailsUiModel(
+        tripId = romeOverview.id,
+        dayId = "day-1",
+        placeId = "pantheon",
+        title = "Pantheon",
+        address = "Piazza della Rotonda, Rome",
+        city = "Rome",
+        dayLabel = "Day 1",
+        dayTitle = "Ancient core and evening squares",
+        visitTimeLabel = "1h 15m",
+        bestTimeLabel = "Best time: Midday",
+        statusLabel = "Planned",
+        categoryLabel = "Landmark",
+        openingStatusLabel = "Open now",
+        neighborhoodLabel = "Pigna",
+        priceLabel = "Ticketed",
+        isCompleted = false,
+        latitude = 41.8986,
+        longitude = 12.4769,
+        heroImageUrl = "https://images.unsplash.com/photo-1529154036614-a60975f5c760?auto=format&fit=crop&w=1200&q=80",
+        heroImageAttribution = "Unsplash",
+        gallery = listOf(
+            PlaceGalleryImageUiModel(
+                id = "pantheon-1",
+                imageUrl = "https://images.unsplash.com/photo-1529154036614-a60975f5c760?auto=format&fit=crop&w=1200&q=80",
+                attribution = "Unsplash",
+            ),
+            PlaceGalleryImageUiModel(
+                id = "pantheon-2",
+                imageUrl = null,
+                attribution = null,
+            ),
+            PlaceGalleryImageUiModel(
+                id = "pantheon-3",
+                imageUrl = null,
+                attribution = null,
+            ),
+        ),
+        aboutText = "Historic dome, dense urban context, and one of the strongest atmosphere shifts inside the Rome route.",
+        whyInRouteText = "This stop anchors the middle of the day and keeps the walking flow balanced between heavier landmarks and quieter square time.",
+        tipsText = "- Arrive before the square gets busy.\n- Keep extra time for the surrounding streets.",
+        visitDetailsText = "Hours: Usually daytime entry with seasonal closing times.\nNeighborhood: Pigna\nWebsite: https://pantheonroma.com",
+        websiteUrl = "https://pantheonroma.com",
+        routeContext = RouteContextUiModel(
+            dayLabel = "Day 1",
+            dayTitle = "Ancient core and evening squares",
+            stopLabel = "Stop 3 of 5",
+            previousPlaceName = "Roman Forum",
+            nextPlaceName = "Trevi Fountain",
+        ),
+    )
+
     fun plannerState() = PlannerScreenState(
         mode = PlannerMode.Create,
         city = "Rome",
         title = "Rome city highlights",
-        summary = "Three calm days with iconic monuments, gentle walks, coffee stops, and sunset viewpoints.",
+        prompt = "Three calm days with iconic monuments, gentle walks, coffee stops, and sunset viewpoints.",
+        days = "3",
+        placeCount = "4",
+        walkingMinutesPerDay = "180",
         heroNote = "Soft pacing, warm light, and enough space for flexible edits later.",
-        helperText = "City, title, and summary are required.",
         syncStatusLabel = "2 changes queued",
         currentTrip = romeOverview,
         savedTrips = listOf(romeOverview, florenceOverview, lisbonOverview),
@@ -116,6 +174,10 @@ object PreviewTrips {
     )
 
     fun detailsDeletingState() = detailsState().copy(isDeleting = true)
+
+    fun placeDetailsState() = PlaceDetailsScreenState(
+        place = pantheonDetails,
+    )
 
     fun savedTripsState() = SavedTripsScreenState(
         isLoading = false,

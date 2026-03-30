@@ -24,9 +24,61 @@ data class RouteSummaryUiModel(
 
 @Immutable
 data class PlaceUiModel(
+    val id: String,
     val name: String,
     val address: String,
     val visitTimeLabel: String,
+    val note: String,
+    val photoUrl: String?,
+    val photoAttribution: String?,
+    val isCompleted: Boolean,
+)
+
+@Immutable
+data class PlaceGalleryImageUiModel(
+    val id: String,
+    val imageUrl: String?,
+    val attribution: String?,
+)
+
+@Immutable
+data class RouteContextUiModel(
+    val dayLabel: String,
+    val dayTitle: String,
+    val stopLabel: String,
+    val previousPlaceName: String?,
+    val nextPlaceName: String?,
+)
+
+@Immutable
+data class PlaceDetailsUiModel(
+    val tripId: String,
+    val dayId: String,
+    val placeId: String,
+    val title: String,
+    val address: String,
+    val city: String,
+    val dayLabel: String,
+    val dayTitle: String,
+    val visitTimeLabel: String,
+    val bestTimeLabel: String,
+    val statusLabel: String,
+    val categoryLabel: String?,
+    val openingStatusLabel: String?,
+    val neighborhoodLabel: String?,
+    val priceLabel: String?,
+    val isCompleted: Boolean,
+    val latitude: Double?,
+    val longitude: Double?,
+    val heroImageUrl: String?,
+    val heroImageAttribution: String?,
+    val gallery: List<PlaceGalleryImageUiModel>,
+    val aboutText: String,
+    val whyInRouteText: String,
+    val tipsText: String,
+    val visitDetailsText: String,
+    val websiteUrl: String?,
+    val routeContext: RouteContextUiModel,
 )
 
 @Immutable

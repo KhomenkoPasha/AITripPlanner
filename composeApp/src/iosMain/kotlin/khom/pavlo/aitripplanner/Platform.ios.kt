@@ -7,3 +7,4 @@ class IOSPlatform: Platform {
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()
+actual fun localBackendBaseUrl(): String = "https://ktor-travel-backend-production.up.railway.app"

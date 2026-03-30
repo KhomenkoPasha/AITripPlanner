@@ -17,10 +17,17 @@ sealed interface AppRoute {
         val tripId: String,
         val originTab: BottomTab,
     ) : AppRoute
+    data class PlaceDetails(
+        val tripId: String,
+        val dayId: String,
+        val placeId: String,
+        val originTab: BottomTab,
+    ) : AppRoute
 }
 
 fun AppRoute.bottomTab(): BottomTab = when (this) {
     is AppRoute.Planner -> BottomTab.CREATE_NEW_TRIP
     AppRoute.MyTrips -> BottomTab.MY_TRIPS
     is AppRoute.TripDetails -> originTab
+    is AppRoute.PlaceDetails -> originTab
 }

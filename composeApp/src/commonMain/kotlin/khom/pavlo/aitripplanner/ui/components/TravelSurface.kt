@@ -12,24 +12,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 
 @Composable
 internal fun TravelCardSurface(
     modifier: Modifier = Modifier,
+    tonalElevation: Dp = 1.dp,
+    shadowElevation: Dp = 10.dp,
+    verticalPadding: Dp = 3.dp,
     content: @Composable () -> Unit,
 ) {
     Surface(
-        modifier = modifier.padding(vertical = 3.dp),
+        modifier = modifier.padding(vertical = verticalPadding),
         shape = TravelTheme.corners.large,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(
             width = 1.dp,
             color = TravelTheme.extendedColors.cardStroke,
         ),
-        tonalElevation = 1.dp,
-        shadowElevation = 10.dp,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
         content = content,
     )
 }

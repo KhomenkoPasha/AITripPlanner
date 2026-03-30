@@ -62,8 +62,30 @@ class TripLocalDataSource(
                                     dayId = placeRow.day_id,
                                     sortIndex = placeRow.sort_index.toInt(),
                                     name = placeRow.name,
+                                    latitude = placeRow.latitude,
+                                    longitude = placeRow.longitude,
                                     address = placeRow.address,
                                     visitMinutes = placeRow.visit_minutes.toInt(),
+                                    note = placeRow.note,
+                                    category = placeRow.category,
+                                    shortDescription = placeRow.short_description,
+                                    fullDescription = placeRow.full_description,
+                                    whyIncluded = placeRow.why_included,
+                                    tips = placeRow.tips_text.decodeLines(),
+                                    openingHoursText = placeRow.opening_hours_text,
+                                    bestTimeToVisit = placeRow.best_time_to_visit,
+                                    isOpenNow = placeRow.is_open_now?.let { it != 0L },
+                                    websiteUrl = placeRow.website_url,
+                                    photoUrl = placeRow.photo_url,
+                                    photoUrls = placeRow.photo_urls_text.decodeLines(),
+                                    photoAttribution = placeRow.photo_attribution,
+                                    priceLevel = placeRow.price_level,
+                                    visitNotes = placeRow.visit_notes,
+                                    neighborhood = placeRow.neighborhood,
+                                    stopIndex = placeRow.stop_index?.toInt(),
+                                    previousPlaceName = placeRow.previous_place_name,
+                                    nextPlaceName = placeRow.next_place_name,
+                                    isCompleted = placeRow.is_completed != 0L,
                                 )
                             },
                     )
@@ -104,16 +126,21 @@ class TripLocalDataSource(
         queries.updateAppLanguage(language.name)
     }
 
-    suspend fun hasTrips(): Boolean = withContext(Dispatchers.Default) {
-        queries.selectTripCount().executeAsOne() > 0L
-    }
-
     suspend fun upsertTrip(trip: Trip) = withContext(Dispatchers.Default) {
         queries.transaction {
             val existingDayIds = queries.selectDayIdsByTripId(trip.id).executeAsList()
             existingDayIds.forEach { dayId -> queries.deletePlacesByDayId(dayId) }
             queries.deleteDaysByTripId(trip.id)
             insertFullTrip(trip)
+        }
+    }
+
+    suspend fun removeLegacyMockTrips() = withContext(Dispatchers.Default) {
+        queries.transaction {
+            queries.deleteLegacyMockPlaces()
+            queries.deleteLegacyMockDays()
+            queries.deleteLegacyMockSyncItems()
+            queries.deleteLegacyMockTrips()
         }
     }
 
@@ -229,12 +256,36 @@ class TripLocalDataSource(
                     day_id = day.id,
                     sort_index = place.sortIndex.toLong(),
                     name = place.name,
+                    latitude = place.latitude,
+                    longitude = place.longitude,
                     address = place.address,
                     visit_minutes = place.visitMinutes.toLong(),
+                    note = place.note,
+                    category = place.category,
+                    short_description = place.shortDescription,
+                    full_description = place.fullDescription,
+                    why_included = place.whyIncluded,
+                    tips_text = place.tips.encodeLines(),
+                    opening_hours_text = place.openingHoursText,
+                    best_time_to_visit = place.bestTimeToVisit,
+                    is_open_now = place.isOpenNow?.asLong(),
+                    website_url = place.websiteUrl,
+                    photo_url = place.photoUrl,
+                    photo_urls_text = place.photoUrls.encodeLines(),
+                    photo_attribution = place.photoAttribution,
+                    price_level = place.priceLevel,
+                    visit_notes = place.visitNotes,
+                    neighborhood = place.neighborhood,
+                    stop_index = place.stopIndex?.toLong(),
+                    previous_place_name = place.previousPlaceName,
+                    next_place_name = place.nextPlaceName,
+                    is_completed = place.isCompleted.asLong(),
                 )
             }
         }
     }
 
     private fun Boolean.asLong(): Long = if (this) 1L else 0L
+    private fun List<String>.encodeLines(): String = filter { it.isNotBlank() }.joinToString(separator = "\n")
+    private fun String.decodeLines(): List<String> = lineSequence().map(String::trim).filter(String::isNotEmpty).toList()
 }

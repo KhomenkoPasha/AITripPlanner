@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import khom.pavlo.aitripplanner.ui.model.RouteSummaryUiModel
 import khom.pavlo.aitripplanner.ui.model.TripOverviewUiModel
+import khom.pavlo.aitripplanner.ui.strings.appStrings
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 
 @Composable
@@ -22,6 +23,8 @@ fun GeneratedTripCard(
     onOpenClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val strings = appStrings()
+
     TravelCardSurface(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(TravelTheme.spacing.xl),
@@ -37,7 +40,7 @@ fun GeneratedTripCard(
                     verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
                 ) {
                     Text(
-                        text = "Current generated trip",
+                        text = strings.generatedTripLabel,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -80,7 +83,7 @@ fun GeneratedTripCard(
                 color = MaterialTheme.colorScheme.secondary,
             )
             PrimaryActionButton(
-                text = "Open trip details",
+                text = strings.openTripDetailsAction,
                 onClick = onOpenClick,
             )
         }

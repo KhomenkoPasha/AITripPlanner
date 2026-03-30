@@ -10,11 +10,12 @@ interface TripRepository {
     fun observeTrips(): Flow<List<Trip>>
     fun observeTrip(tripId: String): Flow<Trip?>
     fun observeSyncState(): Flow<AppSyncState>
-    suspend fun ensureSeedData()
-    suspend fun generateTrip(prompt: String): Trip
+    suspend fun removeMockData()
     suspend fun createTrip(input: TripEditorInput): Trip
     suspend fun updateTrip(tripId: String, input: TripEditorInput): Trip
     suspend fun deleteTrip(tripId: String)
+    suspend fun removePlace(placeId: String)
+    suspend fun setPlaceCompleted(placeId: String, completed: Boolean)
     suspend fun setDayExpanded(dayId: String, expanded: Boolean)
     suspend fun requestSync(trigger: SyncTrigger)
 }

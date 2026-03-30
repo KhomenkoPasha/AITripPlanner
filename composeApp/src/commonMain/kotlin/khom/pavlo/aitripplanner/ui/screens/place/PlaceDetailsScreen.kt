@@ -1,0 +1,255 @@
+package khom.pavlo.aitripplanner.ui.screens.place
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import khom.pavlo.aitripplanner.core.platform.PlatformMapLauncher
+import khom.pavlo.aitripplanner.ui.components.EmptyStateView
+import khom.pavlo.aitripplanner.ui.components.ErrorStateView
+import khom.pavlo.aitripplanner.ui.components.LoadingStateView
+import khom.pavlo.aitripplanner.ui.components.PlaceActionsBar
+import khom.pavlo.aitripplanner.ui.components.PlaceDescriptionSection
+import khom.pavlo.aitripplanner.ui.components.PlaceGallerySection
+import khom.pavlo.aitripplanner.ui.components.PlaceHeroImage
+import khom.pavlo.aitripplanner.ui.components.PlaceMapPreviewCard
+import khom.pavlo.aitripplanner.ui.components.PlaceSummaryChips
+import khom.pavlo.aitripplanner.ui.components.RouteContextCard
+import khom.pavlo.aitripplanner.ui.components.TravelAppScaffold
+import khom.pavlo.aitripplanner.ui.preview.PreviewTrips
+import khom.pavlo.aitripplanner.ui.strings.appStrings
+import khom.pavlo.aitripplanner.ui.theme.AppTheme
+import khom.pavlo.aitripplanner.ui.theme.TravelTheme
+
+@Composable
+fun PlaceDetailsScreen(
+    state: PlaceDetailsScreenState,
+    onBackClick: () -> Unit,
+    onVisitedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    bottomBar: @Composable (() -> Unit)? = null,
+) {
+    val strings = appStrings()
+
+    TravelAppScaffold(
+        modifier = modifier,
+        bottomBar = bottomBar,
+    ) { innerPadding ->
+        when {
+            state.isLoading && state.place == null -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(TravelTheme.spacing.lg),
+                ) {
+                    item {
+                        LoadingStateView(
+                            title = strings.placeDetailsLoadingTitle,
+                            subtitle = strings.placeDetailsLoadingSubtitle,
+                        )
+                    }
+                }
+            }
+
+            state.errorMessage != null && state.place == null -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(TravelTheme.spacing.lg),
+                ) {
+                    item {
+                        ErrorStateView(
+                            title = strings.placeDetailsLoadErrorTitle,
+                            subtitle = state.errorMessage,
+                        )
+                    }
+                }
+            }
+
+            state.place != null -> {
+                val place = state.place
+                val latitude = place.latitude
+                val longitude = place.longitude
+                val showOnMapAction: (() -> Unit)? = if (latitude != null && longitude != null) {
+                    {
+                        PlatformMapLauncher.showOnMap(
+                            label = place.title,
+                            latitude = latitude,
+                            longitude = longitude,
+                        )
+                        Unit
+                    }
+                } else {
+                    null
+                }
+                val openInMapsAction: (() -> Unit)? = if (latitude != null && longitude != null) {
+                    {
+                        PlatformMapLauncher.openInMaps(
+                            label = place.title,
+                            latitude = latitude,
+                            longitude = longitude,
+                        )
+                        Unit
+                    }
+                } else {
+                    null
+                }
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(
+                        start = TravelTheme.spacing.lg,
+                        top = TravelTheme.spacing.md,
+                        end = TravelTheme.spacing.lg,
+                        bottom = TravelTheme.spacing.xxl,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.lg),
+                ) {
+                    item {
+                        PlaceHeroImage(
+                            title = place.title,
+                            subtitle = place.address,
+                            imageUrl = place.heroImageUrl,
+                            statusLabel = place.statusLabel,
+                            dayLabel = place.dayLabel,
+                            photoContentDescription = strings.placePhotoContentDescription,
+                            photoAttributionPrefix = strings.placePhotoAttributionPrefix,
+                            photoAttribution = place.heroImageAttribution,
+                            backActionLabel = strings.backAction,
+                            onBackClick = onBackClick,
+                        )
+                    }
+                    item {
+                        val summaryChips = buildList {
+                            add(place.visitTimeLabel)
+                            add(place.routeContext.stopLabel)
+                            place.categoryLabel?.let(::add)
+                            place.openingStatusLabel?.let(::add)
+                            add(place.bestTimeLabel)
+                            place.neighborhoodLabel?.let(::add)
+                            place.priceLabel?.let(::add)
+                        }
+                        PlaceSummaryChips(
+                            chips = summaryChips,
+                        )
+                    }
+                    state.actionErrorMessage?.let { message ->
+                        item {
+                            ErrorStateView(
+                                title = strings.placeDetailsActionErrorTitle,
+                                subtitle = message,
+                            )
+                        }
+                    }
+                    item {
+                        RouteContextCard(
+                            routeContext = place.routeContext,
+                            title = strings.placeRouteContextTitle,
+                            subtitle = strings.placeRouteContextSubtitle,
+                            previousStopLabel = strings.placePreviousStopLabel,
+                            nextStopLabel = strings.placeNextStopLabel,
+                            noPreviousStopLabel = strings.placeNoPreviousStopLabel,
+                            noNextStopLabel = strings.placeNoNextStopLabel,
+                        )
+                    }
+                    item {
+                        PlaceDescriptionSection(
+                            title = strings.placeAboutTitle,
+                            text = place.aboutText,
+                        )
+                    }
+                    if (place.visitDetailsText.isNotBlank()) {
+                        item {
+                            PlaceDescriptionSection(
+                                title = strings.placeVisitDetailsTitle,
+                                text = place.visitDetailsText,
+                            )
+                        }
+                    }
+                    item {
+                        PlaceDescriptionSection(
+                            title = strings.placeWhyTitle,
+                            text = place.whyInRouteText,
+                        )
+                    }
+                    item {
+                        PlaceDescriptionSection(
+                            title = strings.placeTipsTitle,
+                            text = place.tipsText,
+                        )
+                    }
+                    item {
+                        PlaceGallerySection(
+                            title = strings.placeGalleryTitle,
+                            subtitle = strings.placeGallerySubtitle,
+                            images = place.gallery,
+                            photoContentDescription = strings.placePhotoContentDescription,
+                            placeholderLabel = strings.placeGalleryPlaceholderLabel,
+                            photoAttributionPrefix = strings.placePhotoAttributionPrefix,
+                        )
+                    }
+                    item {
+                        PlaceMapPreviewCard(
+                            title = strings.placeMapTitle,
+                            subtitle = strings.placeMapSubtitle,
+                            placeholderLabel = strings.placeMapPlaceholderLabel,
+                            showOnMapLabel = strings.showOnMapAction,
+                            openInMapsLabel = strings.openInMapsAction,
+                            onShowOnMap = showOnMapAction,
+                            onOpenInMaps = openInMapsAction,
+                        )
+                    }
+                    item {
+                        PlaceActionsBar(
+                            markVisitedLabel = if (place.isCompleted) {
+                                strings.placeVisitedAction
+                            } else {
+                                strings.placeMarkVisitedAction
+                            },
+                            showOnMapLabel = strings.showOnMapAction,
+                            removeLabel = strings.placeRemoveAction,
+                            replaceLabel = strings.placeReplaceAction,
+                            isVisited = place.isCompleted,
+                            onToggleVisited = { onVisitedChange(!place.isCompleted) },
+                            onShowOnMap = showOnMapAction,
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    contentPadding = PaddingValues(TravelTheme.spacing.lg),
+                ) {
+                    item {
+                        EmptyStateView(
+                            title = strings.placeDetailsEmptyTitle,
+                            subtitle = strings.placeDetailsEmptySubtitle,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview
+@Composable
+private fun PlaceDetailsScreenPreview() {
+    AppTheme {
+        PlaceDetailsScreen(
+            state = PreviewTrips.placeDetailsState(),
+            onBackClick = {},
+            onVisitedChange = {},
+        )
+    }
+}
