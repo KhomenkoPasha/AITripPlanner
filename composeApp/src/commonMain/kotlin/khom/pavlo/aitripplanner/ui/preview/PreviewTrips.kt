@@ -65,6 +65,7 @@ object PreviewTrips {
             durationLabel = "5h 10m",
             distanceLabel = "4.2 km",
             isExpanded = true,
+            hasRouteMap = true,
             places = romePlacesDay1,
         ),
         DayItineraryUiModel(
@@ -75,6 +76,7 @@ object PreviewTrips {
             durationLabel = "4h 35m",
             distanceLabel = "3.1 km",
             isExpanded = false,
+            hasRouteMap = false,
             places = listOf(
                 PlaceUiModel("villa-borghese", "Villa Borghese", "Piazzale Napoleone I", "1h 20m", "Open green space with broad walking paths.", null, null, false),
                 PlaceUiModel("galleria-borghese", "Galleria Borghese", "Piazzale Scipione Borghese, 5", "1h 30m", "Focused museum visit with a denser cultural stop.", null, null, false),

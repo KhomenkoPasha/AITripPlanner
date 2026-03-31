@@ -90,6 +90,7 @@ data class DayItineraryUiModel(
     val durationLabel: String,
     val distanceLabel: String,
     val isExpanded: Boolean,
+    val hasRouteMap: Boolean,
     val places: List<PlaceUiModel>,
 )
 

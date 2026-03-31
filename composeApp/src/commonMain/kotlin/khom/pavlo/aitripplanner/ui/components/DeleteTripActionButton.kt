@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.ButtonDefaults
@@ -17,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
@@ -30,12 +33,15 @@ fun DeleteTripActionButton(
     enabled: Boolean = true,
 ) {
     val destructiveColor = MaterialTheme.colorScheme.error.copy(alpha = 0.84f)
+    val shape: RoundedCornerShape = TravelTheme.corners.medium
 
     OutlinedButton(
-        modifier = modifier.defaultMinSize(minHeight = 50.dp),
+        modifier = modifier
+            .defaultMinSize(minHeight = 50.dp)
+            .clip(shape),
         onClick = onClick,
         enabled = enabled && !isLoading,
-        shape = TravelTheme.corners.medium,
+        shape = shape,
         border = BorderStroke(
             width = 1.dp,
             color = destructiveColor.copy(alpha = 0.18f),
@@ -71,11 +77,11 @@ fun DeleteTripActionButton(
             }
             Text(
                 text = text,
-                maxLines = 1,
-                softWrap = false,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.labelLarge,
                 color = destructiveColor,
+                textAlign = TextAlign.Center,
             )
         }
     }

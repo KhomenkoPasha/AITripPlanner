@@ -14,6 +14,7 @@ import khom.pavlo.aitripplanner.domain.model.Budget
 import khom.pavlo.aitripplanner.domain.model.CompanionType
 import khom.pavlo.aitripplanner.domain.model.Interest
 import khom.pavlo.aitripplanner.domain.model.Pace
+import khom.pavlo.aitripplanner.domain.model.PlaceRemotePhoto
 import khom.pavlo.aitripplanner.domain.model.TravelMode
 import khom.pavlo.aitripplanner.domain.model.Trip
 import khom.pavlo.aitripplanner.domain.model.TripDay
@@ -125,15 +126,19 @@ data class RemoteGeneratedTripPlaceDto(
     val bestTimeToVisit: String? = null,
     val isOpenNow: Boolean? = null,
     val websiteUrl: String? = null,
-    val photoUrl: String? = null,
-    val photoUrls: List<String> = emptyList(),
-    val photoAttribution: String? = null,
+    val photos: List<RemotePlacePhotoDto> = emptyList(),
     val priceLevel: String? = null,
     val visitNotes: String? = null,
     val neighborhood: String? = null,
     val stopIndex: Int? = null,
     val previousPlaceName: String? = null,
     val nextPlaceName: String? = null,
+)
+
+@Serializable
+data class RemotePlacePhotoDto(
+    val ref: String,
+    val attribution: String? = null,
 )
 
 @Serializable
@@ -206,9 +211,17 @@ private fun RemoteGeneratedTripDto.toDomain(
                         bestTimeToVisit = place.bestTimeToVisit.orEmpty(),
                         isOpenNow = place.isOpenNow,
                         websiteUrl = place.websiteUrl,
-                        photoUrl = place.photoUrl,
-                        photoUrls = place.photoUrls,
-                        photoAttribution = place.photoAttribution,
+                        photos = place.photos.mapNotNull { photo ->
+                            photo.ref
+                                .trim()
+                                .takeIf(String::isNotBlank)
+                                ?.let { ref ->
+                                    PlaceRemotePhoto(
+                                        ref = ref,
+                                        attribution = photo.attribution?.trim()?.ifBlank { null },
+                                    )
+                                }
+                        },
                         priceLevel = place.priceLevel,
                         visitNotes = place.visitNotes.orEmpty(),
                         neighborhood = place.neighborhood.orEmpty(),

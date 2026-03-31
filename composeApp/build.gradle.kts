@@ -5,11 +5,16 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.sqlDelight)
+    alias(libs.plugins.room)
 }
 
 kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -28,6 +33,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.animation)
@@ -47,8 +54,6 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor3)
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.coroutines.extensions)
         }
         androidMain.dependencies {
             implementation(libs.androidx.core.ktx)
@@ -57,11 +62,10 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.work.runtime.ktx)
             implementation(libs.ktor.client.okhttp)
-            implementation(libs.sqldelight.android.driver)
+            implementation(libs.osmdroid.android)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.native.driver)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -77,8 +81,8 @@ android {
         applicationId = "khom.pavlo.aitripplanner"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "0.0.2"
     }
     packaging {
         resources {
@@ -96,14 +100,14 @@ android {
     }
 }
 
-sqldelight {
-    databases {
-        create("TravelPlannerDatabase") {
-            packageName.set("khom.pavlo.aitripplanner.data.local.db")
-        }
-    }
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
+    add("kspCommonMainMetadata", libs.androidx.room.compiler)
+    add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
     debugImplementation(libs.compose.uiTooling)
 }

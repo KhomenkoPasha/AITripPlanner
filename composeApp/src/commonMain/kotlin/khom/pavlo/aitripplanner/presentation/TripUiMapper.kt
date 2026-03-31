@@ -1,10 +1,17 @@
 package khom.pavlo.aitripplanner.presentation
 
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.PlacePhoto
+import khom.pavlo.aitripplanner.domain.model.PlaceRemotePhoto
 import khom.pavlo.aitripplanner.domain.model.Trip
+import khom.pavlo.aitripplanner.localBackendBaseUrl
+import io.ktor.http.encodeURLParameter
+import khom.pavlo.aitripplanner.ui.model.DayRouteMapUiModel
+import khom.pavlo.aitripplanner.ui.model.DayRouteStopUiModel
 import khom.pavlo.aitripplanner.ui.model.DayItineraryUiModel
 import khom.pavlo.aitripplanner.ui.model.PlaceDetailsUiModel
 import khom.pavlo.aitripplanner.ui.model.PlaceGalleryImageUiModel
+import khom.pavlo.aitripplanner.ui.model.PlacePhotoUiModel
 import khom.pavlo.aitripplanner.ui.model.PlaceUiModel
 import khom.pavlo.aitripplanner.ui.model.RouteContextUiModel
 import khom.pavlo.aitripplanner.ui.model.RouteSummaryUiModel
@@ -50,6 +57,7 @@ internal fun Trip.toDetailsUi(language: AppLanguage) = TripDetailsUiModel(
             durationLabel = formatDuration(day.durationMinutes, language),
             distanceLabel = formatDistance(day.distanceKm, language),
             isExpanded = day.isExpanded,
+            hasRouteMap = day.places.any { place -> place.latitude != null && place.longitude != null },
             places = day.places.map { place ->
                 PlaceUiModel(
                     id = place.id,
@@ -57,8 +65,8 @@ internal fun Trip.toDetailsUi(language: AppLanguage) = TripDetailsUiModel(
                     address = place.address,
                     visitTimeLabel = formatDuration(place.visitMinutes, language),
                     note = place.shortDescription.ifBlank { place.note },
-                    photoUrl = place.photoUrl,
-                    photoAttribution = place.photoAttribution,
+                    photoUrl = place.photos.firstOrNull()?.toBackendImageUrl(),
+                    photoAttribution = place.photos.firstOrNull()?.attribution,
                     isCompleted = place.isCompleted,
                 )
             },
@@ -78,10 +86,7 @@ internal fun Trip.toPlaceDetailsUi(
     val place = day.places[placeIndex]
     val stopNumber = (place.stopIndex ?: placeIndex) + 1
     val totalStops = day.places.size
-    val galleryUrls = buildList {
-        if (!place.photoUrl.isNullOrBlank()) add(place.photoUrl)
-        addAll(place.photoUrls.filter { it.isNotBlank() })
-    }.distinct()
+    val backendPhotos = place.photos.distinctBy { it.ref }
     val openingStatusLabel = language.openingStatusLabel(place.isOpenNow)
     val categoryLabel = language.categoryLabel(place.category)
     val priceLabel = language.priceLevelLabel(place.priceLevel)
@@ -106,14 +111,14 @@ internal fun Trip.toPlaceDetailsUi(
         isCompleted = place.isCompleted,
         latitude = place.latitude,
         longitude = place.longitude,
-        heroImageUrl = place.photoUrl,
-        heroImageAttribution = place.photoAttribution,
-        gallery = if (galleryUrls.isNotEmpty()) {
-            galleryUrls.mapIndexed { index, imageUrl ->
+        heroImageUrl = backendPhotos.firstOrNull()?.toBackendImageUrl(),
+        heroImageAttribution = backendPhotos.firstOrNull()?.attribution,
+        gallery = if (backendPhotos.isNotEmpty()) {
+            backendPhotos.mapIndexed { index, photo ->
                 PlaceGalleryImageUiModel(
                     id = "${place.id}-gallery-$index",
-                    imageUrl = imageUrl,
-                    attribution = place.photoAttribution,
+                    imageUrl = photo.toBackendImageUrl(),
+                    attribution = photo.attribution,
                 )
             }
         } else {
@@ -149,7 +154,7 @@ internal fun Trip.toPlaceDetailsUi(
             visitNotes = place.visitNotes,
             visitTimeLabel = formatDuration(place.visitMinutes, language),
             address = place.address,
-            hasPhoto = galleryUrls.isNotEmpty(),
+            hasPhoto = backendPhotos.isNotEmpty(),
         ),
         visitDetailsText = language.placeVisitDetailsText(
             openingHoursText = place.openingHoursText,
@@ -167,6 +172,41 @@ internal fun Trip.toPlaceDetailsUi(
     )
 }
 
+internal fun Trip.toDayRouteMapUi(
+    language: AppLanguage,
+    dayId: String,
+): DayRouteMapUiModel? {
+    val day = days.firstOrNull { it.id == dayId } ?: return null
+    val stops = day.places.mapIndexedNotNull { index, place ->
+        val latitude = place.latitude ?: return@mapIndexedNotNull null
+        val longitude = place.longitude ?: return@mapIndexedNotNull null
+        DayRouteStopUiModel(
+            id = place.id,
+            numberLabel = (index + 1).toString(),
+            title = place.name,
+            address = place.address,
+            latitude = latitude,
+            longitude = longitude,
+        )
+    }
+
+    return DayRouteMapUiModel(
+        tripId = id,
+        dayId = dayId,
+        city = city,
+        dayLabel = language.dayLabel(day.dayIndex),
+        title = day.title,
+        durationLabel = formatDuration(day.durationMinutes, language),
+        distanceLabel = formatDistance(day.distanceKm, language),
+        stops = stops,
+    )
+}
+
+internal fun PlacePhoto.toUi(): PlacePhotoUiModel = PlacePhotoUiModel(
+    id = id,
+    localUri = localUri,
+)
+
 private fun formatDuration(totalMinutes: Int, language: AppLanguage): String {
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
@@ -174,3 +214,8 @@ private fun formatDuration(totalMinutes: Int, language: AppLanguage): String {
 }
 
 private fun formatDistance(distanceKm: Double, language: AppLanguage): String = language.distanceLabel(distanceKm)
+
+private fun PlaceRemotePhoto.toBackendImageUrl(maxWidth: Int = 1200): String {
+    val encodedRef = ref.encodeURLParameter()
+    return "${localBackendBaseUrl()}/api/place-photos?ref=$encodedRef&maxWidth=$maxWidth"
+}

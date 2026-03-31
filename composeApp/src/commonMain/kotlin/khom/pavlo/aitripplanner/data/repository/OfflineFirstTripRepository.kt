@@ -8,6 +8,7 @@ import khom.pavlo.aitripplanner.domain.model.Trip
 import khom.pavlo.aitripplanner.domain.model.TripDay
 import khom.pavlo.aitripplanner.domain.model.TripEditorInput
 import khom.pavlo.aitripplanner.domain.model.TripPlace
+import khom.pavlo.aitripplanner.domain.repository.PlacePhotoRepository
 import khom.pavlo.aitripplanner.domain.repository.TripRepository
 import khom.pavlo.aitripplanner.sync.SyncEngine
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,7 @@ import kotlin.math.roundToInt
 class OfflineFirstTripRepository(
     private val localDataSource: TripLocalDataSource,
     private val remoteDataSource: TripsRemoteDataSource,
+    private val placePhotoRepository: PlacePhotoRepository,
     private val syncEngine: SyncEngine,
 ) : TripRepository {
     override fun observeTrips(): Flow<List<Trip>> = localDataSource.observeTrips()
@@ -28,9 +30,7 @@ class OfflineFirstTripRepository(
         emit(syncEngine.state.value)
     }
 
-    override suspend fun removeMockData() {
-        localDataSource.removeLegacyMockTrips()
-    }
+    override suspend fun removeMockData() = Unit
 
     override suspend fun createTrip(input: TripEditorInput): Trip = generateAndStore(input)
 
@@ -40,6 +40,7 @@ class OfflineFirstTripRepository(
     }
 
     override suspend fun deleteTrip(tripId: String) {
+        placePhotoRepository.deletePhotosByTrip(tripId)
         localDataSource.deleteTrip(tripId)
     }
 
@@ -49,6 +50,7 @@ class OfflineFirstTripRepository(
         } ?: error("Trip containing place not found")
 
         val updated = trip.removePlace(placeId) ?: return
+        placePhotoRepository.deletePhotosByPlace(placeId)
         localDataSource.upsertTrip(updated)
     }
 

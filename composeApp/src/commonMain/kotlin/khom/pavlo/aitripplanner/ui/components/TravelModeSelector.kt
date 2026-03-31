@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -44,6 +45,7 @@ fun TravelModeSelector(
                 Text(
                     text = modeLabel,
                     modifier = Modifier
+                        .clip(TravelTheme.corners.medium)
                         .background(
                             color = if (selected) {
                                 MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.82f)

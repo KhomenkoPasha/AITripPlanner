@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.domain.model.CitySuggestion
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
@@ -63,6 +64,7 @@ fun CitySuggestionsDropdown(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(TravelTheme.corners.medium)
                             .clickable { onSuggestionClick(suggestion) }
                             .padding(TravelTheme.spacing.md),
                         verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xxs),

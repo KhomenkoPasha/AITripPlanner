@@ -1,5 +1,7 @@
 package khom.pavlo.aitripplanner.ui.theme
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
@@ -18,7 +20,22 @@ val RoseSoft = Color(0xFFEDD8D0)
 val DividerSoft = Color(0xFFE7DDD1)
 val ErrorSoft = Color(0xFFBE6A5E)
 
-internal val AppColorScheme = lightColorScheme(
+val NightBackground = Color(0xFF14110E)
+val NightBackgroundDeep = Color(0xFF0D0B09)
+val NightSurfacePrimary = Color(0xFF1C1814)
+val NightSurfaceSecondary = Color(0xFF26201B)
+val NightSurfaceTertiary = Color(0xFF312923)
+val NightInkPrimary = Color(0xFFF4EDE3)
+val NightInkSecondary = Color(0xFFD2C3B5)
+val NightInkMuted = Color(0xFFA8998B)
+val NightSandAccent = Color(0xFFE0AD7B)
+val NightSageAccent = Color(0xFFA1B9A8)
+val NightSageSoft = Color(0xFF334139)
+val NightRoseSoft = Color(0xFF47352E)
+val NightDividerSoft = Color(0xFF3A322C)
+val NightErrorSoft = Color(0xFFFFB4A8)
+
+internal val LightAppColorScheme = lightColorScheme(
     primary = InkPrimary,
     onPrimary = SurfacePrimary,
     primaryContainer = SurfaceSecondary,
@@ -45,3 +62,32 @@ internal val AppColorScheme = lightColorScheme(
     onErrorContainer = InkPrimary,
 )
 
+internal val DarkAppColorScheme = darkColorScheme(
+    primary = NightInkPrimary,
+    onPrimary = NightBackground,
+    primaryContainer = NightSurfaceTertiary,
+    onPrimaryContainer = NightInkPrimary,
+    secondary = NightSageAccent,
+    onSecondary = NightBackground,
+    secondaryContainer = NightSageSoft,
+    onSecondaryContainer = NightInkPrimary,
+    tertiary = NightSandAccent,
+    onTertiary = NightBackground,
+    tertiaryContainer = NightRoseSoft,
+    onTertiaryContainer = NightInkPrimary,
+    background = NightBackground,
+    onBackground = NightInkPrimary,
+    surface = NightSurfacePrimary,
+    onSurface = NightInkPrimary,
+    surfaceVariant = NightSurfaceSecondary,
+    onSurfaceVariant = NightInkSecondary,
+    outline = NightDividerSoft,
+    outlineVariant = NightSurfaceTertiary,
+    error = NightErrorSoft,
+    onError = NightBackground,
+    errorContainer = Color(0xFF5B2E26),
+    onErrorContainer = Color(0xFFFFDBD5),
+)
+
+internal fun appColorScheme(darkTheme: Boolean): ColorScheme =
+    if (darkTheme) DarkAppColorScheme else LightAppColorScheme

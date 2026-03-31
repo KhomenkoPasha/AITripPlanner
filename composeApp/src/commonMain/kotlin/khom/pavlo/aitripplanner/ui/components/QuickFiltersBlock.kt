@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.domain.model.Budget
@@ -175,6 +176,7 @@ private fun SelectableFilterChip(
     Text(
         text = label,
         modifier = Modifier
+            .clip(TravelTheme.corners.medium)
             .background(
                 color = if (selected) {
                     MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.82f)

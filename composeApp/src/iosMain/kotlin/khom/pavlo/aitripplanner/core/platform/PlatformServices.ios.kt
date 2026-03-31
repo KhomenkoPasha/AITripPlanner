@@ -1,23 +1,37 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package khom.pavlo.aitripplanner.core.platform
 
-import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.native.NativeSqliteDriver
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import khom.pavlo.aitripplanner.data.local.db.TravelPlannerDatabase
-import platform.Foundation.NSDate
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSURL
+import platform.Foundation.NSUserDomainMask
 import platform.UIKit.UIApplication
+import platform.posix.time
 
 private const val DATABASE_NAME = "travel_planner.db"
 
-actual class SqlDriverFactory {
-    actual fun createDriver(): SqlDriver = NativeSqliteDriver(
-        schema = TravelPlannerDatabase.Schema,
-        name = DATABASE_NAME,
+actual fun getDatabaseBuilder(): RoomDatabase.Builder<TravelPlannerDatabase> {
+    val fileManager = NSFileManager.defaultManager
+    val dbUrl = fileManager.URLForDirectory(
+        directory = NSDocumentDirectory,
+        inDomain = NSUserDomainMask,
+        appropriateForURL = null,
+        create = false,
+        error = null,
+    )?.URLByAppendingPathComponent(DATABASE_NAME)
+        ?: error("Unable to resolve database path")
+
+    return Room.databaseBuilder<TravelPlannerDatabase>(
+        name = dbUrl.path ?: DATABASE_NAME,
     )
 }
 
 actual object PlatformTime {
-    actual fun nowMillis(): Long = (NSDate().timeIntervalSince1970 * 1000.0).toLong()
+    actual fun nowMillis(): Long = time(null) * 1000L
 }
 
 actual object PlatformMapLauncher {

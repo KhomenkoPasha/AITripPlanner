@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.AppThemeMode
 import khom.pavlo.aitripplanner.domain.model.Budget
 import khom.pavlo.aitripplanner.domain.model.CitySuggestion
 import khom.pavlo.aitripplanner.domain.model.CompanionType
@@ -36,6 +38,7 @@ import khom.pavlo.aitripplanner.ui.components.PlannerHeroSection
 import khom.pavlo.aitripplanner.ui.components.PromptInputCard
 import khom.pavlo.aitripplanner.ui.components.SavedTripCard
 import khom.pavlo.aitripplanner.ui.components.SectionHeader
+import khom.pavlo.aitripplanner.ui.components.ThemeSelector
 import khom.pavlo.aitripplanner.ui.components.TravelAppScaffold
 import khom.pavlo.aitripplanner.ui.navigation.PlannerMode
 import khom.pavlo.aitripplanner.ui.preview.PreviewTrips
@@ -48,7 +51,9 @@ import khom.pavlo.aitripplanner.presentation.label
 fun PlannerScreen(
     state: PlannerScreenState,
     selectedLanguage: AppLanguage,
+    selectedTheme: AppThemeMode,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onThemeSelected: (AppThemeMode) -> Unit,
     onCityChange: (String) -> Unit,
     onCitySuggestionClick: (CitySuggestion) -> Unit,
     onTitleChange: (String) -> Unit,
@@ -98,7 +103,11 @@ fun PlannerScreen(
                     horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
                 ) {
                     if (isEdit) {
-                        TextButton(onClick = onBackClick) {
+                        TextButton(
+                            onClick = onBackClick,
+                            modifier = Modifier.clip(TravelTheme.corners.medium),
+                            shape = TravelTheme.corners.medium,
+                        ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                 contentDescription = strings.backAction,
@@ -112,11 +121,21 @@ fun PlannerScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                LanguageSelector(
-                    selectedLanguage = selectedLanguage,
-                    label = strings.languageLabel,
-                    onLanguageSelected = onLanguageSelected,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
+                    LanguageSelector(
+                        selectedLanguage = selectedLanguage,
+                        label = strings.languageLabel,
+                        onLanguageSelected = onLanguageSelected,
+                    )
+                    ThemeSelector(
+                        selectedTheme = selectedTheme,
+                        label = strings.themeLabel,
+                        systemLabel = strings.themeSystemLabel,
+                        lightLabel = strings.themeLightLabel,
+                        darkLabel = strings.themeDarkLabel,
+                        onThemeSelected = onThemeSelected,
+                    )
+                }
             }
         },
         bottomBar = bottomBar,
@@ -270,7 +289,9 @@ private fun PlannerScreenPreview() {
         PlannerScreen(
             state = PreviewTrips.plannerState(),
             selectedLanguage = AppLanguage.EN,
+            selectedTheme = AppThemeMode.SYSTEM,
             onLanguageSelected = {},
+            onThemeSelected = {},
             onCityChange = {},
             onCitySuggestionClick = {},
             onTitleChange = {},

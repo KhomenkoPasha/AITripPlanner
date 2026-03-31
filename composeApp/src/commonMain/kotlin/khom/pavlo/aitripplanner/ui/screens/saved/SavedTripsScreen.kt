@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.AppThemeMode
 import khom.pavlo.aitripplanner.presentation.saved.SavedTripsScreenState
 import khom.pavlo.aitripplanner.ui.animation.ShimmerPlaceholderCard
 import khom.pavlo.aitripplanner.ui.animation.StaggeredAppearance
@@ -29,6 +31,7 @@ import khom.pavlo.aitripplanner.ui.components.ErrorStateView
 import khom.pavlo.aitripplanner.ui.components.LanguageSelector
 import khom.pavlo.aitripplanner.ui.components.SavedTripCard
 import khom.pavlo.aitripplanner.ui.components.SectionHeader
+import khom.pavlo.aitripplanner.ui.components.ThemeSelector
 import khom.pavlo.aitripplanner.ui.components.TravelAppScaffold
 import khom.pavlo.aitripplanner.ui.preview.PreviewTrips
 import khom.pavlo.aitripplanner.ui.strings.appStrings
@@ -39,7 +42,9 @@ import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 fun SavedTripsScreen(
     state: SavedTripsScreenState,
     selectedLanguage: AppLanguage,
+    selectedTheme: AppThemeMode,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onThemeSelected: (AppThemeMode) -> Unit,
     onTripClick: (String) -> Unit,
     onEditTrip: (String) -> Unit,
     onDeleteTrip: (String) -> Unit,
@@ -63,26 +68,41 @@ fun SavedTripsScreen(
     TravelAppScaffold(
         modifier = modifier,
         topBar = {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
                         horizontal = TravelTheme.spacing.lg,
                         vertical = TravelTheme.spacing.md,
                     ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
             ) {
                 Text(
                     text = strings.savedTripsTitle,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                LanguageSelector(
-                    selectedLanguage = selectedLanguage,
-                    label = strings.languageLabel,
-                    onLanguageSelected = onLanguageSelected,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
+                    LanguageSelector(
+                        selectedLanguage = selectedLanguage,
+                        label = strings.languageLabel,
+                        onLanguageSelected = onLanguageSelected,
+                    )
+                    ThemeSelector(
+                        selectedTheme = selectedTheme,
+                        label = strings.themeLabel,
+                        systemLabel = strings.themeSystemLabel,
+                        lightLabel = strings.themeLightLabel,
+                        darkLabel = strings.themeDarkLabel,
+                        onThemeSelected = onThemeSelected,
+                    )
+                    }
+                }
             }
         },
         bottomBar = bottomBar,
@@ -165,7 +185,9 @@ private fun SavedTripsScreenPreview() {
         SavedTripsScreen(
             state = PreviewTrips.savedTripsState(),
             selectedLanguage = AppLanguage.EN,
+            selectedTheme = AppThemeMode.SYSTEM,
             onLanguageSelected = {},
+            onThemeSelected = {},
             onTripClick = {},
             onEditTrip = {},
             onDeleteTrip = {},

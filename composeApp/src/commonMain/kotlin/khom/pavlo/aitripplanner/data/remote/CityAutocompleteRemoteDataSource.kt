@@ -41,7 +41,9 @@ class PhotonCityAutocompleteRemoteDataSource(
                 .features
                 .mapNotNull { feature -> feature.toSuggestion() }
                 .forEach { suggestion ->
-                    collected.putIfAbsent(suggestion.id, suggestion)
+                    if (collected[suggestion.id] == null) {
+                        collected[suggestion.id] = suggestion
+                    }
                 }
 
             if (collected.size >= limit) return@forEach

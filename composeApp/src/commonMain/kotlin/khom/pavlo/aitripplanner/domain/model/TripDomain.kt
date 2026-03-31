@@ -3,6 +3,12 @@ package khom.pavlo.aitripplanner.domain.model
 import androidx.compose.runtime.Immutable
 
 @Immutable
+data class PlaceRemotePhoto(
+    val ref: String,
+    val attribution: String? = null,
+)
+
+@Immutable
 data class Trip(
     val id: String,
     val city: String,
@@ -52,9 +58,7 @@ data class TripPlace(
     val bestTimeToVisit: String = "",
     val isOpenNow: Boolean? = null,
     val websiteUrl: String? = null,
-    val photoUrl: String?,
-    val photoUrls: List<String> = emptyList(),
-    val photoAttribution: String?,
+    val photos: List<PlaceRemotePhoto> = emptyList(),
     val priceLevel: String? = null,
     val visitNotes: String = "",
     val neighborhood: String = "",

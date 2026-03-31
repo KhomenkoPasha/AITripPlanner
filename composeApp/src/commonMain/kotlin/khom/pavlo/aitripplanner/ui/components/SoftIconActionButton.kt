@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -38,6 +39,7 @@ fun SoftIconActionButton(
     Box(
         modifier = modifier
             .size(size)
+            .clip(TravelTheme.corners.small)
             .background(
                 color = containerColor,
                 shape = TravelTheme.corners.small,

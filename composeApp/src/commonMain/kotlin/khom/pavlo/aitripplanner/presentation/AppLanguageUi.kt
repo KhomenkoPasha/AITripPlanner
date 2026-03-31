@@ -8,6 +8,8 @@ import khom.pavlo.aitripplanner.domain.model.Interest
 import khom.pavlo.aitripplanner.domain.model.Pace
 import khom.pavlo.aitripplanner.domain.model.TravelMode
 import khom.pavlo.aitripplanner.domain.model.TripPreference
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 internal fun AppLanguage.daysLabel(count: Int): String = when (this) {
     AppLanguage.EN -> "$count days"
@@ -100,7 +102,7 @@ internal fun AppLanguage.minutesLabel(minutes: Int): String = when (this) {
 }
 
 internal fun AppLanguage.distanceLabel(distanceKm: Double): String {
-    val value = "%.1f".format(distanceKm)
+    val value = distanceKm.toOneDecimalString()
     return when (this) {
         AppLanguage.EN -> "$value km"
         AppLanguage.RU -> "$value км"
@@ -541,4 +543,11 @@ internal fun AppSyncState.toStatusLabel(language: AppLanguage): String? = when {
     queuedItems > 0 -> language.queuedChangesLabel(queuedItems)
     lastCompletedAtEpochMillis != null -> language.everythingSyncedLabel()
     else -> null
+}
+
+private fun Double.toOneDecimalString(): String {
+    val scaled = (this * 10.0).roundToInt()
+    val whole = scaled / 10
+    val fraction = abs(scaled % 10)
+    return "$whole.$fraction"
 }

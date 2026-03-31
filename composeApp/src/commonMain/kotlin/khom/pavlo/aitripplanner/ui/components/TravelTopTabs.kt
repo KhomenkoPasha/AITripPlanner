@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 
 @Composable
@@ -33,6 +34,7 @@ fun TravelTopTabs(
             Text(
                 text = option,
                 modifier = Modifier
+                    .clip(CircleShape)
                     .background(
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         shape = CircleShape,

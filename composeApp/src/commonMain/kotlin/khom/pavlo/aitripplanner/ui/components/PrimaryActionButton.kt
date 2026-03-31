@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -13,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 
@@ -24,13 +27,16 @@ fun PrimaryActionButton(
     enabled: Boolean = true,
     isLoading: Boolean = false,
 ) {
+    val shape: RoundedCornerShape = TravelTheme.corners.medium
+
     Button(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = 56.dp),
+            .defaultMinSize(minHeight = 56.dp)
+            .clip(shape),
         enabled = enabled && !isLoading,
-        shape = TravelTheme.corners.medium,
+        shape = shape,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -52,8 +58,8 @@ fun PrimaryActionButton(
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
+                textAlign = TextAlign.Center,
             )
         }
     }
 }
-

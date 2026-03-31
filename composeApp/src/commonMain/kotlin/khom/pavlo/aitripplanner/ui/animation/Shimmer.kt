@@ -22,9 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 import kotlinx.coroutines.delay
@@ -56,6 +56,7 @@ fun StaggeredAppearance(
 fun ShimmerPlaceholderCard(
     modifier: Modifier = Modifier,
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     val transition = rememberInfiniteTransition(label = "shimmer")
     val shift by transition.animateFloat(
         initialValue = 0f,
@@ -68,9 +69,9 @@ fun ShimmerPlaceholderCard(
     )
     val brush = Brush.linearGradient(
         colors = listOf(
-            Color(0xFFEDE4D8),
-            Color(0xFFF8F3EC),
-            Color(0xFFEDE4D8),
+            colorScheme.surfaceVariant,
+            colorScheme.outlineVariant.copy(alpha = 0.9f),
+            colorScheme.surfaceVariant,
         ),
         start = androidx.compose.ui.geometry.Offset.Zero,
         end = androidx.compose.ui.geometry.Offset(300f * shift, 300f * shift),
@@ -79,7 +80,7 @@ fun ShimmerPlaceholderCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(28.dp))
+            .background(colorScheme.surface.copy(alpha = 0.82f), RoundedCornerShape(28.dp))
             .padding(TravelTheme.spacing.xl),
     ) {
         Box(

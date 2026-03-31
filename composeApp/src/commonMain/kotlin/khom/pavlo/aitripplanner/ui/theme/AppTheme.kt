@@ -1,5 +1,6 @@
 package khom.pavlo.aitripplanner.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -23,14 +24,32 @@ private val LocalTravelExtendedColors = staticCompositionLocalOf { TravelExtende
 private val LocalTravelCorners = staticCompositionLocalOf { TravelCorners() }
 
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
+fun AppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val extendedColors = if (darkTheme) {
+        TravelExtendedColors(
+            backgroundTop = NightSurfaceSecondary,
+            backgroundBottom = NightBackgroundDeep,
+            cardStroke = NightDividerSoft,
+            softAccent = NightRoseSoft,
+            accentGlow = Color(0x40E0AD7B),
+            mutedAccent = NightSageSoft,
+            successTint = Color(0xFF223128),
+            errorTint = Color(0xFF402720),
+        )
+    } else {
+        TravelExtendedColors()
+    }
+
     CompositionLocalProvider(
         LocalTravelSpacing provides TravelSpacing(),
-        LocalTravelExtendedColors provides TravelExtendedColors(),
+        LocalTravelExtendedColors provides extendedColors,
         LocalTravelCorners provides TravelCorners(),
     ) {
         MaterialTheme(
-            colorScheme = AppColorScheme,
+            colorScheme = appColorScheme(darkTheme),
             typography = AppTypography,
             shapes = AppShapes,
             content = content,
@@ -51,4 +70,3 @@ object TravelTheme {
         @Composable
         get() = LocalTravelCorners.current
 }
-

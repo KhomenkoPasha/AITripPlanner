@@ -1,10 +1,9 @@
 package khom.pavlo.aitripplanner.core.platform
 
-import app.cash.sqldelight.db.SqlDriver
+import androidx.room.RoomDatabase
+import khom.pavlo.aitripplanner.data.local.db.TravelPlannerDatabase
 
-expect class SqlDriverFactory {
-    fun createDriver(): SqlDriver
-}
+expect fun getDatabaseBuilder(): RoomDatabase.Builder<TravelPlannerDatabase>
 
 expect object PlatformTime {
     fun nowMillis(): Long

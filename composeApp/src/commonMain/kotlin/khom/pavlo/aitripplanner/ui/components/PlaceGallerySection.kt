@@ -1,6 +1,7 @@
 package khom.pavlo.aitripplanner.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +41,9 @@ fun PlaceGallerySection(
     photoAttributionPrefix: String,
     modifier: Modifier = Modifier,
 ) {
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+    var selectedCaption by remember { mutableStateOf<String?>(null) }
+
     TravelCardSurface(modifier = modifier) {
         Column(
             modifier = Modifier.padding(vertical = TravelTheme.spacing.lg),
@@ -62,7 +70,11 @@ fun PlaceGallerySection(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(132.dp)
-                                    .clip(TravelTheme.corners.medium),
+                                    .clip(TravelTheme.corners.medium)
+                                    .clickable {
+                                        selectedImageUrl = image.imageUrl
+                                        selectedCaption = image.attribution?.let { "$photoAttributionPrefix $it" }
+                                    },
                                 contentScale = ContentScale.Crop,
                             )
                         } else {
@@ -102,5 +114,17 @@ fun PlaceGallerySection(
                 }
             }
         }
+    }
+
+    selectedImageUrl?.let { imageUrl ->
+        PhotoViewerDialog(
+            imageUrl = imageUrl,
+            contentDescription = photoContentDescription,
+            caption = selectedCaption,
+            onDismiss = {
+                selectedImageUrl = null
+                selectedCaption = null
+            },
+        )
     }
 }

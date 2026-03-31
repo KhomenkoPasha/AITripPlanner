@@ -1,6 +1,7 @@
 package khom.pavlo.aitripplanner.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +45,8 @@ fun PlaceHeroImage(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isPhotoViewerVisible by remember(imageUrl) { mutableStateOf(false) }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -50,7 +57,9 @@ fun PlaceHeroImage(
             AsyncImage(
                 model = imageUrl,
                 contentDescription = photoContentDescription,
-                modifier = Modifier.matchParentSize(),
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { isPhotoViewerVisible = true },
                 contentScale = ContentScale.Crop,
             )
         } else {
@@ -157,5 +166,14 @@ fun PlaceHeroImage(
                 }
             }
         }
+    }
+
+    if (isPhotoViewerVisible && !imageUrl.isNullOrBlank()) {
+        PhotoViewerDialog(
+            imageUrl = imageUrl,
+            contentDescription = photoContentDescription,
+            caption = photoAttribution?.let { "$photoAttributionPrefix $it" },
+            onDismiss = { isPhotoViewerVisible = false },
+        )
     }
 }

@@ -17,8 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.ui.theme.TravelTheme
 
 @Composable
 fun LanguageSelector(
@@ -30,7 +32,11 @@ fun LanguageSelector(
     var expanded by remember { mutableStateOf(false) }
 
     Row(modifier = modifier, horizontalArrangement = Arrangement.End) {
-        FilledTonalButton(onClick = { expanded = true }) {
+        FilledTonalButton(
+            onClick = { expanded = true },
+            modifier = Modifier.clip(TravelTheme.corners.medium),
+            shape = TravelTheme.corners.medium,
+        ) {
             Icon(
                 imageVector = Icons.Outlined.Language,
                 contentDescription = label,

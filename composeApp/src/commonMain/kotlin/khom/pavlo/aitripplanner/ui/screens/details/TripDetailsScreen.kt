@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.AppThemeMode
 import khom.pavlo.aitripplanner.ui.animation.ShimmerPlaceholderCard
 import khom.pavlo.aitripplanner.ui.animation.StaggeredAppearance
 import khom.pavlo.aitripplanner.ui.components.DayItineraryCard
@@ -41,6 +43,7 @@ import khom.pavlo.aitripplanner.ui.components.LanguageSelector
 import khom.pavlo.aitripplanner.ui.components.LoadingStateView
 import khom.pavlo.aitripplanner.ui.components.RouteSummaryRow
 import khom.pavlo.aitripplanner.ui.components.SectionHeader
+import khom.pavlo.aitripplanner.ui.components.ThemeSelector
 import khom.pavlo.aitripplanner.ui.components.TravelInfoChip
 import khom.pavlo.aitripplanner.ui.components.TravelAppScaffold
 import khom.pavlo.aitripplanner.ui.components.TravelCardSurface
@@ -60,7 +63,9 @@ private enum class TripDetailsContentState {
 fun TripDetailsScreen(
     state: TripDetailsScreenState,
     selectedLanguage: AppLanguage,
+    selectedTheme: AppThemeMode,
     onLanguageSelected: (AppLanguage) -> Unit,
+    onThemeSelected: (AppThemeMode) -> Unit,
     onBackClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -70,6 +75,7 @@ fun TripDetailsScreen(
     onPlaceCompletionChange: (String, Boolean) -> Unit,
     onDeletePlace: (String) -> Unit,
     onOpenPlace: (String, String) -> Unit,
+    onOpenDayRouteMap: (String) -> Unit,
     modifier: Modifier = Modifier,
     bottomBar: @Composable (() -> Unit)? = null,
 ) {
@@ -107,6 +113,7 @@ fun TripDetailsScreen(
             ) {
                 OutlinedButton(
                     onClick = onBackClick,
+                    modifier = Modifier.clip(TravelTheme.corners.large),
                     shape = TravelTheme.corners.large,
                 ) {
                     Icon(
@@ -115,11 +122,21 @@ fun TripDetailsScreen(
                     )
                     Text(text = strings.backAction)
                 }
-                LanguageSelector(
-                    selectedLanguage = selectedLanguage,
-                    label = strings.languageLabel,
-                    onLanguageSelected = onLanguageSelected,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
+                    LanguageSelector(
+                        selectedLanguage = selectedLanguage,
+                        label = strings.languageLabel,
+                        onLanguageSelected = onLanguageSelected,
+                    )
+                    ThemeSelector(
+                        selectedTheme = selectedTheme,
+                        label = strings.themeLabel,
+                        systemLabel = strings.themeSystemLabel,
+                        lightLabel = strings.themeLightLabel,
+                        darkLabel = strings.themeDarkLabel,
+                        onThemeSelected = onThemeSelected,
+                    )
+                }
             }
         },
         bottomBar = bottomBar,
@@ -293,7 +310,9 @@ fun TripDetailsScreen(
                                         photoContentDescription = strings.placePhotoContentDescription,
                                         photoAttributionPrefix = strings.placePhotoAttributionPrefix,
                                         deleteLabel = strings.deleteAction,
+                                        openDayRouteMapLabel = strings.openDayRouteMapAction,
                                         onToggleExpand = { expanded -> onToggleDay(day.id, expanded) },
+                                        onOpenDayRouteMap = onOpenDayRouteMap,
                                         onPlaceClick = { placeId -> onOpenPlace(day.id, placeId) },
                                         onPlaceCompletionChange = onPlaceCompletionChange,
                                         onDeletePlace = onDeletePlace,
@@ -326,7 +345,9 @@ private fun TripDetailsScreenPreview() {
         TripDetailsScreen(
             state = PreviewTrips.detailsState(),
             selectedLanguage = AppLanguage.EN,
+            selectedTheme = AppThemeMode.SYSTEM,
             onLanguageSelected = {},
+            onThemeSelected = {},
             onBackClick = {},
             onEditClick = {},
             onDeleteClick = {},
@@ -336,6 +357,7 @@ private fun TripDetailsScreenPreview() {
             onPlaceCompletionChange = { _, _ -> },
             onDeletePlace = {},
             onOpenPlace = { _, _ -> },
+            onOpenDayRouteMap = {},
         )
     }
 }

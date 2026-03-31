@@ -1,6 +1,7 @@
 package khom.pavlo.aitripplanner.ui.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,20 +11,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,68 +57,49 @@ fun PlaceItemRow(
     val titleDecoration = if (place.isCompleted) TextDecoration.LineThrough else TextDecoration.None
     val supportingAlpha = if (place.isCompleted) 0.66f else 1f
     val hasActions = onCompletionChange != null || onDeleteClick != null
+    val cardShape = TravelTheme.corners.large
+    val photoShape = TravelTheme.corners.medium
+    var selectedImageUrl by remember(place.photoUrl) { mutableStateOf<String?>(null) }
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .animateContentSize(),
-        horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.md),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Box(
-            modifier = Modifier
-                .padding(top = 7.dp)
-                .width(14.dp)
-                .height(14.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    shape = TravelTheme.corners.small,
-                )
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f),
-                    shape = TravelTheme.corners.small,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(6.dp)
-                    .height(6.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.tertiary,
-                        shape = CircleShape,
-                    ),
-            )
-        }
-        Column(
+        Surface(
             modifier = Modifier
                 .weight(1f)
-                .then(
-                    if (onClick != null) {
-                        Modifier.clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    },
-                ),
-            verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
+                .clip(cardShape)
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            shape = cardShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = if (place.isCompleted) 0.92f else 0.98f),
+            border = BorderStroke(
+                width = 1.dp,
+                color = TravelTheme.extendedColors.cardStroke.copy(alpha = 0.92f),
+            ),
+            tonalElevation = 1.dp,
+            shadowElevation = 6.dp,
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.md),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .animateContentSize(),
-                    verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
                 ) {
                     if (!place.photoUrl.isNullOrBlank()) {
                         Surface(
-                            shape = TravelTheme.corners.medium,
+                            shape = photoShape,
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
-                            border = androidx.compose.foundation.BorderStroke(
+                            border = BorderStroke(
                                 width = 1.dp,
                                 color = TravelTheme.extendedColors.cardStroke,
                             ),
@@ -121,40 +109,49 @@ fun PlaceItemRow(
                                 contentDescription = photoContentDescription,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(136.dp)
+                                    .height(148.dp)
+                                    .clip(photoShape)
+                                    .clickable {
+                                        selectedImageUrl = place.photoUrl
+                                    }
                                     .alpha(if (place.isCompleted) 0.78f else 1f),
                                 contentScale = ContentScale.Crop,
                             )
                         }
                     }
-                    Text(
-                        text = place.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textDecoration = titleDecoration,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = place.address,
-                        modifier = Modifier.alpha(supportingAlpha),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (place.note.isNotBlank()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
                         Text(
-                            text = place.note,
+                            text = place.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textDecoration = titleDecoration,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = place.address,
                             modifier = Modifier.alpha(supportingAlpha),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 4,
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
+                        if (place.note.isNotBlank()) {
+                            Text(
+                                text = place.note,
+                                modifier = Modifier.alpha(supportingAlpha),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.92f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TravelInfoChip(
@@ -166,9 +163,12 @@ fun PlaceItemRow(
                         if (!place.photoAttribution.isNullOrBlank()) {
                             Text(
                                 text = "$photoAttributionPrefix ${place.photoAttribution}",
-                                modifier = Modifier.alpha(supportingAlpha),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .alpha(supportingAlpha),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
+                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.9f),
+                                textAlign = TextAlign.End,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -177,9 +177,20 @@ fun PlaceItemRow(
                 }
                 if (hasActions) {
                     Column(
-                        modifier = Modifier.width(44.dp),
+                        modifier = Modifier
+                            .width(52.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                shape = TravelTheme.corners.medium,
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = TravelTheme.extendedColors.cardStroke.copy(alpha = 0.88f),
+                                shape = TravelTheme.corners.medium,
+                            )
+                            .padding(vertical = 8.dp, horizontal = 6.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
+                        verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
                     ) {
                         if (onCompletionChange != null) {
                             AppCheckbox(
@@ -197,7 +208,7 @@ fun PlaceItemRow(
                                 onClick = onDeleteClick,
                                 size = 36.dp,
                                 iconSize = 17.dp,
-                                containerColor = TravelTheme.extendedColors.errorTint,
+                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.86f),
                                 borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
                                 contentColor = MaterialTheme.colorScheme.error,
                             )
@@ -206,6 +217,15 @@ fun PlaceItemRow(
                 }
             }
         }
+    }
+
+    selectedImageUrl?.let { imageUrl ->
+        PhotoViewerDialog(
+            imageUrl = imageUrl,
+            contentDescription = photoContentDescription,
+            caption = place.photoAttribution?.let { "$photoAttributionPrefix $it" },
+            onDismiss = { selectedImageUrl = null },
+        )
     }
 }
 

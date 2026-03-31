@@ -19,13 +19,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,8 +53,10 @@ fun DayItineraryCard(
     photoContentDescription: String,
     photoAttributionPrefix: String,
     deleteLabel: String,
+    openDayRouteMapLabel: String,
     onPlaceClick: (String) -> Unit = {},
     onToggleExpand: (Boolean) -> Unit = {},
+    onOpenDayRouteMap: ((String) -> Unit)? = null,
     onPlaceCompletionChange: (String, Boolean) -> Unit = { _, _ -> },
     onDeletePlace: (String) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -74,6 +80,7 @@ fun DayItineraryCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(TravelTheme.corners.medium)
                     .background(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (day.isExpanded) 0.42f else 0.26f),
                         shape = TravelTheme.corners.medium,
@@ -147,6 +154,21 @@ fun DayItineraryCard(
                         paceLabel = stringResource(Res.string.places_count_label, day.places.size),
                     ),
                 )
+                if (day.hasRouteMap && onOpenDayRouteMap != null) {
+                    OutlinedButton(
+                        onClick = { onOpenDayRouteMap(day.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(TravelTheme.corners.medium),
+                        shape = TravelTheme.corners.medium,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Map,
+                            contentDescription = null,
+                        )
+                        Text(text = openDayRouteMapLabel)
+                    }
+                }
             }
             AnimatedVisibility(
                 visible = day.isExpanded,
@@ -199,6 +221,7 @@ private fun DayItineraryCardPreview() {
             photoContentDescription = "Place photo",
             photoAttributionPrefix = "Photo:",
             deleteLabel = "Delete",
+            openDayRouteMapLabel = "Day route map",
             onPlaceClick = {},
             modifier = Modifier.padding(TravelTheme.spacing.lg),
         )
