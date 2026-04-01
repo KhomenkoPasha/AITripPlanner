@@ -2,6 +2,7 @@ package khom.pavlo.aitripplanner.ui.screens.planner
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -87,20 +88,19 @@ fun PlannerScreen(
     TravelAppScaffold(
         modifier = modifier,
         topBar = {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
                         horizontal = TravelTheme.spacing.lg,
                         vertical = TravelTheme.spacing.md,
                     ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(TravelTheme.spacing.sm),
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs),
                 ) {
                     if (isEdit) {
                         TextButton(
@@ -115,27 +115,28 @@ fun PlannerScreen(
                             Text(text = strings.backAction)
                         }
                     }
-                    Text(
-                        text = if (isEdit) strings.editTripTitle else strings.createTripTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
+                        LanguageSelector(
+                            selectedLanguage = selectedLanguage,
+                            label = strings.languageLabel,
+                            onLanguageSelected = onLanguageSelected,
+                        )
+                        ThemeSelector(
+                            selectedTheme = selectedTheme,
+                            label = strings.themeLabel,
+                            systemLabel = strings.themeSystemLabel,
+                            lightLabel = strings.themeLightLabel,
+                            darkLabel = strings.themeDarkLabel,
+                            onThemeSelected = onThemeSelected,
+                        )
+                    }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
-                    LanguageSelector(
-                        selectedLanguage = selectedLanguage,
-                        label = strings.languageLabel,
-                        onLanguageSelected = onLanguageSelected,
-                    )
-                    ThemeSelector(
-                        selectedTheme = selectedTheme,
-                        label = strings.themeLabel,
-                        systemLabel = strings.themeSystemLabel,
-                        lightLabel = strings.themeLightLabel,
-                        darkLabel = strings.themeDarkLabel,
-                        onThemeSelected = onThemeSelected,
-                    )
-                }
+                Text(
+                    text = if (isEdit) strings.editTripTitle else strings.createTripTitle,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         },
         bottomBar = bottomBar,

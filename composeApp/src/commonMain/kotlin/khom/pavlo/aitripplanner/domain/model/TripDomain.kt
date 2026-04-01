@@ -1,14 +1,17 @@
 package khom.pavlo.aitripplanner.domain.model
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
 @Immutable
+@Serializable
 data class PlaceRemotePhoto(
     val ref: String,
     val attribution: String? = null,
 )
 
 @Immutable
+@Serializable
 data class Trip(
     val id: String,
     val city: String,
@@ -26,6 +29,7 @@ data class Trip(
 )
 
 @Immutable
+@Serializable
 data class TripDay(
     val id: String,
     val tripId: String,
@@ -39,6 +43,7 @@ data class TripDay(
 )
 
 @Immutable
+@Serializable
 data class TripPlace(
     val id: String,
     val dayId: String,

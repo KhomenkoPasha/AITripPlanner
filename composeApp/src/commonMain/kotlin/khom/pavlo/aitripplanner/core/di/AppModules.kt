@@ -1,35 +1,50 @@
 package khom.pavlo.aitripplanner.core.di
 
+import khom.pavlo.aitripplanner.core.auth.AuthSessionManager
 import khom.pavlo.aitripplanner.core.network.HttpClientFactory
+import khom.pavlo.aitripplanner.core.platform.SecureTokenStorage
 import khom.pavlo.aitripplanner.data.local.DatabaseFactory
 import khom.pavlo.aitripplanner.data.local.PlacePhotoLocalDataSource
 import khom.pavlo.aitripplanner.data.local.TripLocalDataSource
+import khom.pavlo.aitripplanner.data.remote.AuthRemoteDataSource
+import khom.pavlo.aitripplanner.data.remote.KtorAuthRemoteDataSource
 import khom.pavlo.aitripplanner.data.remote.CityAutocompleteRemoteDataSource
 import khom.pavlo.aitripplanner.data.remote.PhotonCityAutocompleteRemoteDataSource
 import khom.pavlo.aitripplanner.data.remote.PhotonConfig
 import khom.pavlo.aitripplanner.data.remote.KtorTripsRemoteDataSource
 import khom.pavlo.aitripplanner.data.remote.TravelPlannerConfig
 import khom.pavlo.aitripplanner.data.remote.TripsRemoteDataSource
+import khom.pavlo.aitripplanner.data.repository.DefaultAuthRepository
 import khom.pavlo.aitripplanner.data.repository.DefaultPlacePhotoRepository
 import khom.pavlo.aitripplanner.data.repository.LocalSettingsRepository
 import khom.pavlo.aitripplanner.data.repository.OfflineFirstTripRepository
+import khom.pavlo.aitripplanner.domain.repository.AuthRepository
 import khom.pavlo.aitripplanner.domain.repository.PlacePhotoRepository
 import khom.pavlo.aitripplanner.domain.repository.SettingsRepository
 import khom.pavlo.aitripplanner.domain.repository.TripRepository
 import khom.pavlo.aitripplanner.domain.usecase.AddPlacePhotoUseCase
+import khom.pavlo.aitripplanner.domain.usecase.ClearSessionUseCase
 import khom.pavlo.aitripplanner.domain.usecase.CreateTripUseCase
 import khom.pavlo.aitripplanner.domain.usecase.DeleteTripUseCase
+import khom.pavlo.aitripplanner.domain.usecase.GetCurrentUserUseCase
+import khom.pavlo.aitripplanner.domain.usecase.GetCachedUserUseCase
+import khom.pavlo.aitripplanner.domain.usecase.GetSavedSessionUseCase
+import khom.pavlo.aitripplanner.domain.usecase.HasAuthorizedDeviceUseCase
 import khom.pavlo.aitripplanner.domain.usecase.GetCurrentAppLanguageUseCase
 import khom.pavlo.aitripplanner.domain.usecase.GetCurrentAppThemeUseCase
+import khom.pavlo.aitripplanner.domain.usecase.LoginUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveAppLanguageUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObservePlacePhotosUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveAppThemeUseCase
+import khom.pavlo.aitripplanner.domain.usecase.ObserveSavedSessionUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveSyncStateUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveTripDetailsUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveTripsUseCase
 import khom.pavlo.aitripplanner.domain.usecase.DeletePlacePhotoUseCase
+import khom.pavlo.aitripplanner.domain.usecase.LogoutUseCase
 import khom.pavlo.aitripplanner.domain.usecase.RemoveMockDataUseCase
 import khom.pavlo.aitripplanner.domain.usecase.RemovePlaceUseCase
+import khom.pavlo.aitripplanner.domain.usecase.RegisterUseCase
 import khom.pavlo.aitripplanner.domain.usecase.RequestSyncUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SearchCitiesUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetAppLanguageUseCase
@@ -37,6 +52,7 @@ import khom.pavlo.aitripplanner.domain.usecase.SetAppThemeUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetDayExpandedUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetPlaceCompletedUseCase
 import khom.pavlo.aitripplanner.domain.usecase.UpdateTripUseCase
+import khom.pavlo.aitripplanner.presentation.auth.AuthViewModel
 import khom.pavlo.aitripplanner.presentation.app.AppViewModel
 import khom.pavlo.aitripplanner.presentation.dayroute.DayRouteMapViewModel
 import khom.pavlo.aitripplanner.presentation.details.TripDetailsViewModel
@@ -44,6 +60,8 @@ import khom.pavlo.aitripplanner.presentation.place.PlaceDetailsViewModel
 import khom.pavlo.aitripplanner.presentation.planner.PlannerViewModel
 import khom.pavlo.aitripplanner.presentation.saved.SavedTripsViewModel
 import khom.pavlo.aitripplanner.sync.SyncEngine
+import khom.pavlo.aitripplanner.sync.BackgroundSyncScheduler
+import khom.pavlo.aitripplanner.sync.ImmediateBackgroundSyncScheduler
 import khom.pavlo.aitripplanner.sync.TripSyncEngine
 import kotlinx.serialization.json.Json
 import org.koin.core.Koin
@@ -62,15 +80,20 @@ val sharedModule = module {
     }
     single { TravelPlannerConfig() }
     single { PhotonConfig() }
-    single { HttpClientFactory(get()).create() }
+    single { SecureTokenStorage() }
+    single { AuthSessionManager(get()) }
+    single { HttpClientFactory(get(), get(), get()).create() }
     single { DatabaseFactory().create() }
     single { TripLocalDataSource(get()) }
     single { PlacePhotoLocalDataSource(get()) }
-    single<TripsRemoteDataSource> { KtorTripsRemoteDataSource(get(), get()) }
+    single<AuthRemoteDataSource> { KtorAuthRemoteDataSource(get(), get()) }
+    single<TripsRemoteDataSource> { KtorTripsRemoteDataSource(get(), get(), get()) }
     single<CityAutocompleteRemoteDataSource> { PhotonCityAutocompleteRemoteDataSource(get(), get()) }
     single<SyncEngine> { TripSyncEngine(get(), get()) }
+    single<BackgroundSyncScheduler> { ImmediateBackgroundSyncScheduler(get()) }
+    single<AuthRepository> { DefaultAuthRepository(get(), get()) }
     single<PlacePhotoRepository> { DefaultPlacePhotoRepository(get(), get()) }
-    single<TripRepository> { OfflineFirstTripRepository(get(), get(), get(), get()) }
+    single<TripRepository> { OfflineFirstTripRepository(get(), get(), get(), get(), get(), get()) }
     single<SettingsRepository> { LocalSettingsRepository(get(), get()) }
 
     factory { ObserveTripsUseCase(get()) }
@@ -83,6 +106,15 @@ val sharedModule = module {
     factory { ObserveAppThemeUseCase(get()) }
     factory { GetCurrentAppThemeUseCase(get()) }
     factory { SetAppThemeUseCase(get()) }
+    factory { ObserveSavedSessionUseCase(get()) }
+    factory { GetCachedUserUseCase(get()) }
+    factory { GetSavedSessionUseCase(get()) }
+    factory { HasAuthorizedDeviceUseCase(get()) }
+    factory { GetCurrentUserUseCase(get()) }
+    factory { LoginUseCase(get()) }
+    factory { RegisterUseCase(get()) }
+    factory { LogoutUseCase(get()) }
+    factory { ClearSessionUseCase(get()) }
     factory { AddPlacePhotoUseCase(get()) }
     factory { DeletePlacePhotoUseCase(get()) }
     factory { RemoveMockDataUseCase(get()) }
@@ -95,8 +127,9 @@ val sharedModule = module {
     factory { RequestSyncUseCase(get()) }
     factory { SearchCitiesUseCase(get()) }
 
-    factory { AppViewModel(get(), get(), get(),
-        get(), get(), get()) }
+    factory { AppViewModel(get(), get(), get(), get(),
+        get(), get(), get(), get()) }
+    factory { AuthViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { PlannerViewModel(get(), get(), get(),
         get(), get(), get(), get()) }
     factory { SavedTripsViewModel(get(), get(), get(),

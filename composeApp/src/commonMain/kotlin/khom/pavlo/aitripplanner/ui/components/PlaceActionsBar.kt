@@ -41,6 +41,16 @@ fun PlaceActionsBar(
                     text = markVisitedLabel,
                     onClick = onToggleVisited,
                     modifier = Modifier.weight(1f),
+                    containerColor = if (isVisited) {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                    contentColor = if (isVisited) {
+                        MaterialTheme.colorScheme.onTertiaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary
+                    },
                 )
                 OutlinedButton(
                     onClick = { onShowOnMap?.invoke() },

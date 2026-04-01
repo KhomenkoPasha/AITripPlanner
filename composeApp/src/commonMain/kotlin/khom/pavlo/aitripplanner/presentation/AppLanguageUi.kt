@@ -357,16 +357,6 @@ internal fun AppLanguage.placeVisitDetailsText(
             },
         )
     }
-    if (!websiteUrl.isNullOrBlank()) {
-        if (isNotEmpty()) append('\n')
-        append(
-            when (this@placeVisitDetailsText) {
-                AppLanguage.EN -> "Website: $websiteUrl"
-                AppLanguage.RU -> "Сайт: $websiteUrl"
-                AppLanguage.UK -> "Сайт: $websiteUrl"
-            },
-        )
-    }
 }
 
 internal fun TravelMode.label(language: AppLanguage): String = when (this) {

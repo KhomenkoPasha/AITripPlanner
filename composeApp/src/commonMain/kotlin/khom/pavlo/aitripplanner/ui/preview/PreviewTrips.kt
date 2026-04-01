@@ -24,6 +24,7 @@ object PreviewTrips {
         durationLabel = "16h 0m",
         distanceLabel = "12.4 km",
         syncLabel = "Pending sync",
+        isFavorite = true,
     )
 
     private val florenceOverview = TripOverviewUiModel(
@@ -35,6 +36,7 @@ object PreviewTrips {
         durationLabel = "9h 0m",
         distanceLabel = "6.8 km",
         syncLabel = "Synced",
+        isFavorite = false,
     )
 
     private val lisbonOverview = TripOverviewUiModel(
@@ -46,6 +48,7 @@ object PreviewTrips {
         durationLabel = "18h 0m",
         distanceLabel = "15.2 km",
         syncLabel = "Synced",
+        isFavorite = true,
     )
 
     val romePlacesDay1 = listOf(

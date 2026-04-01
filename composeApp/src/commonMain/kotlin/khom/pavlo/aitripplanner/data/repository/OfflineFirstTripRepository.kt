@@ -2,18 +2,26 @@ package khom.pavlo.aitripplanner.data.repository
 
 import khom.pavlo.aitripplanner.core.platform.PlatformTime
 import khom.pavlo.aitripplanner.data.local.TripLocalDataSource
+import khom.pavlo.aitripplanner.data.remote.RemoteTripSyncDeletePayload
+import khom.pavlo.aitripplanner.data.remote.RemoteTripSyncUpsertRequest
 import khom.pavlo.aitripplanner.data.remote.TripsRemoteDataSource
 import khom.pavlo.aitripplanner.domain.model.SyncTrigger
+import khom.pavlo.aitripplanner.domain.model.SyncOperationType
+import khom.pavlo.aitripplanner.domain.model.SyncQueueItem
+import khom.pavlo.aitripplanner.domain.model.SyncQueueState
 import khom.pavlo.aitripplanner.domain.model.Trip
 import khom.pavlo.aitripplanner.domain.model.TripDay
 import khom.pavlo.aitripplanner.domain.model.TripEditorInput
 import khom.pavlo.aitripplanner.domain.model.TripPlace
 import khom.pavlo.aitripplanner.domain.repository.PlacePhotoRepository
 import khom.pavlo.aitripplanner.domain.repository.TripRepository
+import khom.pavlo.aitripplanner.sync.BackgroundSyncScheduler
 import khom.pavlo.aitripplanner.sync.SyncEngine
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 
 class OfflineFirstTripRepository(
@@ -21,6 +29,8 @@ class OfflineFirstTripRepository(
     private val remoteDataSource: TripsRemoteDataSource,
     private val placePhotoRepository: PlacePhotoRepository,
     private val syncEngine: SyncEngine,
+    private val backgroundSyncScheduler: BackgroundSyncScheduler,
+    private val json: Json,
 ) : TripRepository {
     override fun observeTrips(): Flow<List<Trip>> = localDataSource.observeTrips()
 
@@ -40,8 +50,13 @@ class OfflineFirstTripRepository(
     }
 
     override suspend fun deleteTrip(tripId: String) {
+        val existing = observeTrip(tripId).first() ?: error("Trip not found")
         placePhotoRepository.deletePhotosByTrip(tripId)
-        localDataSource.deleteTrip(tripId)
+        localDataSource.deleteTrip(
+            tripId = tripId,
+            deleteSyncItem = existing.toDeleteSyncQueueItem(json),
+        )
+        backgroundSyncScheduler.scheduleSync(SyncTrigger.USER)
     }
 
     override suspend fun removePlace(placeId: String) {
@@ -52,6 +67,8 @@ class OfflineFirstTripRepository(
         val updated = trip.removePlace(placeId) ?: return
         placePhotoRepository.deletePhotosByPlace(placeId)
         localDataSource.upsertTrip(updated)
+        localDataSource.enqueueSync(updated.toUpsertSyncQueueItem(json))
+        backgroundSyncScheduler.scheduleSync(SyncTrigger.USER)
     }
 
     override suspend fun setPlaceCompleted(placeId: String, completed: Boolean) {
@@ -75,10 +92,63 @@ class OfflineFirstTripRepository(
         input: TripEditorInput,
         existingTrip: Trip? = null,
     ): Trip {
-        val trip = remoteDataSource.generateTrip(input, existingTrip)
+        val trip = remoteDataSource.generateTrip(input, existingTrip).markPendingSync()
         localDataSource.upsertTrip(trip)
+        localDataSource.enqueueSync(trip.toUpsertSyncQueueItem(json))
+        backgroundSyncScheduler.scheduleSync(SyncTrigger.USER)
         return trip
     }
+}
+
+private fun Trip.markPendingSync(): Trip = copy(
+    isPendingSync = true,
+    updatedAtEpochMillis = PlatformTime.nowMillis(),
+)
+
+private fun Trip.toUpsertSyncQueueItem(json: Json): SyncQueueItem {
+    val now = PlatformTime.nowMillis()
+    return SyncQueueItem(
+        id = "trip-upsert-$id",
+        entityId = id,
+        entityType = "trip",
+        operation = SyncOperationType.UPSERT_TRIP,
+        payloadJson = json.encodeToString(
+            RemoteTripSyncUpsertRequest(
+                trip = withoutLocalPlaceCompletion(),
+                baseVersion = remoteVersion,
+            ),
+        ),
+        state = SyncQueueState.PENDING,
+        attemptCount = 0,
+        baseVersion = remoteVersion,
+        conflictToken = null,
+        lastError = null,
+        createdAtEpochMillis = now,
+        updatedAtEpochMillis = now,
+    )
+}
+
+private fun Trip.toDeleteSyncQueueItem(json: Json): SyncQueueItem {
+    val now = PlatformTime.nowMillis()
+    return SyncQueueItem(
+        id = "trip-delete-$id",
+        entityId = id,
+        entityType = "trip",
+        operation = SyncOperationType.DELETE_TRIP,
+        payloadJson = json.encodeToString(
+            RemoteTripSyncDeletePayload(
+                tripId = id,
+                baseVersion = remoteVersion,
+            ),
+        ),
+        state = SyncQueueState.PENDING,
+        attemptCount = 0,
+        baseVersion = remoteVersion,
+        conflictToken = null,
+        lastError = null,
+        createdAtEpochMillis = now,
+        updatedAtEpochMillis = now,
+    )
 }
 
 private fun Trip.removePlace(placeId: String): Trip? {
@@ -111,11 +181,20 @@ private fun Trip.setPlaceCompleted(placeId: String, completed: Boolean): Trip? {
     if (!changed) return null
 
     return copy(
-        isPendingSync = true,
         updatedAtEpochMillis = PlatformTime.nowMillis(),
         days = updatedDays,
     )
 }
+
+private fun Trip.withoutLocalPlaceCompletion(): Trip = copy(
+    days = days.map { day ->
+        day.copy(
+            places = day.places.map { place ->
+                if (!place.isCompleted) place else place.copy(isCompleted = false)
+            },
+        )
+    },
+)
 
 private fun TripDay.removePlace(placeId: String): TripDay {
     if (places.none { it.id == placeId }) return this

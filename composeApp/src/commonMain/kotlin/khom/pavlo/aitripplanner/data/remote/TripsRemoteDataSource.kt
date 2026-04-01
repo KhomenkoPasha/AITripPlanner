@@ -2,7 +2,10 @@ package khom.pavlo.aitripplanner.data.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.isSuccess
 import io.ktor.http.ContentType
@@ -23,6 +26,11 @@ import khom.pavlo.aitripplanner.domain.model.TripPlace
 import khom.pavlo.aitripplanner.domain.model.TripPreference
 import khom.pavlo.aitripplanner.localBackendBaseUrl
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlin.random.Random
 
 data class TravelPlannerConfig(
@@ -38,6 +46,7 @@ interface TripsRemoteDataSource {
 class KtorTripsRemoteDataSource(
     private val client: HttpClient,
     private val config: TravelPlannerConfig,
+    private val json: Json,
 ) : TripsRemoteDataSource {
     override suspend fun generateTrip(input: TripEditorInput, existingTrip: Trip?): Trip {
         val response = client.post("${config.baseUrl}/api/trips/generate") {
@@ -57,10 +66,55 @@ class KtorTripsRemoteDataSource(
         )
     }
 
-    override suspend fun fetchTrips(): List<Trip> = emptyList()
+    override suspend fun fetchTrips(): List<Trip> {
+        val response = client.get("${config.baseUrl}/api/trips")
+        ensureTripRequestSuccess(response)
+        val payload = response.body<JsonElement>()
+        return payload.decodeTrips(json)
+    }
 
-    override suspend fun pushPendingOperation(item: SyncQueueItem): Result<Unit> = Result.success(Unit)
+    override suspend fun pushPendingOperation(item: SyncQueueItem): Result<Unit> = runCatching {
+        when (item.operation) {
+            khom.pavlo.aitripplanner.domain.model.SyncOperationType.UPSERT_TRIP -> {
+                val payload = json.decodeFromString<RemoteTripSyncUpsertRequest>(item.payloadJson)
+                val response = client.put("${config.baseUrl}/api/trips/${payload.trip.id}") {
+                    contentType(ContentType.Application.Json)
+                    setBody(payload)
+                }
+                ensureTripRequestSuccess(response)
+            }
+
+            khom.pavlo.aitripplanner.domain.model.SyncOperationType.DELETE_TRIP -> {
+                val payload = json.decodeFromString<RemoteTripSyncDeletePayload>(item.payloadJson)
+                val response = client.delete("${config.baseUrl}/api/trips/${payload.tripId}") {
+                    url {
+                        payload.baseVersion?.let { version ->
+                            parameters.append("baseVersion", version.toString())
+                        }
+                    }
+                }
+                ensureTripRequestSuccess(response)
+            }
+        }
+    }
 }
+
+@Serializable
+data class RemoteTripSyncUpsertRequest(
+    val trip: Trip,
+    val baseVersion: Long? = null,
+)
+
+@Serializable
+data class RemoteTripSyncDeletePayload(
+    val tripId: String,
+    val baseVersion: Long? = null,
+)
+
+@Serializable
+data class RemoteTripsResponse(
+    val trips: List<Trip> = emptyList(),
+)
 
 @Serializable
 data class RemoteGenerateTripRequest(
@@ -155,6 +209,30 @@ data class RemoteErrorResponseDto(
     val message: String,
 )
 
+private suspend fun ensureTripRequestSuccess(
+    response: io.ktor.client.statement.HttpResponse,
+) {
+    if (response.status.isSuccess()) return
+
+    val errorBody = runCatching { response.body<RemoteErrorResponseDto>() }.getOrNull()
+    val message = errorBody?.message ?: "Request failed with HTTP ${response.status.value}"
+    throw IllegalStateException(message)
+}
+
+private fun JsonElement.decodeTrips(json: Json): List<Trip> = decodeTripsOrNull(json) ?: emptyList()
+
+private fun JsonElement.decodeTripsOrNull(json: Json): List<Trip>? = when (this) {
+    is JsonArray -> runCatching { json.decodeFromString<List<Trip>>(toString()) }.getOrNull()
+    is JsonObject -> {
+        runCatching { json.decodeFromString<RemoteTripsResponse>(toString()).trips }.getOrNull()
+            ?: listOf("trips", "items", "data", "result")
+                .firstNotNullOfOrNull { key -> this[key]?.decodeTripsOrNull(json) }
+            ?: runCatching { listOf(json.decodeFromString<Trip>(toString())) }.getOrNull()
+    }
+
+    else -> null
+}
+
 private fun RemoteGeneratedTripDto.toDomain(
     input: TripEditorInput,
     existingTrip: Trip?,
@@ -176,7 +254,7 @@ private fun RemoteGeneratedTripDto.toDomain(
         isFavorite = existingTrip?.isFavorite ?: false,
         isOfflineOnly = false,
         isPendingSync = false,
-        remoteVersion = (existingTrip?.remoteVersion ?: 0) + 1,
+        remoteVersion = existingTrip?.remoteVersion ?: 0,
         updatedAtEpochMillis = now,
         days = days.map { day ->
             val dayId = "$tripId-day-${day.dayNumber}"

@@ -1,11 +1,14 @@
 package khom.pavlo.aitripplanner.presentation.app
 
 import khom.pavlo.aitripplanner.domain.model.AppLanguage
+import khom.pavlo.aitripplanner.domain.model.SyncTrigger
 import khom.pavlo.aitripplanner.domain.model.AppThemeMode
 import khom.pavlo.aitripplanner.domain.usecase.GetCurrentAppThemeUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveAppLanguageUseCase
 import khom.pavlo.aitripplanner.domain.usecase.ObserveAppThemeUseCase
+import khom.pavlo.aitripplanner.domain.usecase.ObserveTripsUseCase
 import khom.pavlo.aitripplanner.domain.usecase.RemoveMockDataUseCase
+import khom.pavlo.aitripplanner.domain.usecase.RequestSyncUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetAppLanguageUseCase
 import khom.pavlo.aitripplanner.domain.usecase.SetAppThemeUseCase
 import khom.pavlo.aitripplanner.presentation.base.Presenter
@@ -37,13 +40,17 @@ data class AppShellState(
 }
 
 class AppViewModel(
+    private val observeTrips: ObserveTripsUseCase,
     private val observeAppLanguage: ObserveAppLanguageUseCase,
     private val setAppLanguage: SetAppLanguageUseCase,
     private val observeAppTheme: ObserveAppThemeUseCase,
     private val getCurrentAppTheme: GetCurrentAppThemeUseCase,
     private val setAppTheme: SetAppThemeUseCase,
     private val removeMockData: RemoveMockDataUseCase,
+    private val requestSync: RequestSyncUseCase,
 ) : Presenter() {
+    private var hasResolvedInitialRoute = false
+    private var latestHasTrips = false
     private val mutableState = MutableStateFlow(
         AppShellState(selectedTheme = getCurrentAppTheme()),
     )
@@ -52,6 +59,33 @@ class AppViewModel(
     init {
         scope.launch {
             removeMockData()
+        }
+        scope.launch {
+            runCatching {
+                requestSync(SyncTrigger.APP_FOREGROUND)
+            }
+        }
+        scope.launch {
+            observeTrips().collect { trips ->
+                val hasTrips = trips.isNotEmpty()
+                latestHasTrips = hasTrips
+                if (!hasResolvedInitialRoute) {
+                    hasResolvedInitialRoute = true
+                    mutableState.update { state ->
+                        state.copy(
+                            backStack = listOf(initialTopLevelRoute()),
+                        )
+                    }
+                } else if (!hasTrips) {
+                    mutableState.update { state ->
+                        if (state.backStack.size == 1 && state.currentRoute == AppRoute.MyTrips) {
+                            state.copy(backStack = listOf(AppRoute.Planner(PlannerMode.Create)))
+                        } else {
+                            state
+                        }
+                    }
+                }
+            }
         }
         scope.launch {
             observeAppLanguage().collect { language ->
@@ -75,6 +109,10 @@ class AppViewModel(
 
     fun openMyTrips() {
         navigateTo(AppRoute.MyTrips)
+    }
+
+    fun openProfile() {
+        navigateTo(AppRoute.Profile)
     }
 
     fun openTripDetails(tripId: String, originTab: BottomTab) {
@@ -126,6 +164,7 @@ class AppViewModel(
                     is AppRoute.DayRouteMap -> previousRoute.originTab
                     is AppRoute.PlaceDetails -> previousRoute.originTab
                     AppRoute.MyTrips -> BottomTab.MY_TRIPS
+                    AppRoute.Profile -> BottomTab.PROFILE
                     else -> BottomTab.CREATE_NEW_TRIP
                 }
                 state.copy(
@@ -179,6 +218,22 @@ class AppViewModel(
         scope.launch { setAppTheme(theme) }
     }
 
+    fun resetToRootRoute() {
+        hasResolvedInitialRoute = true
+        mutableState.update { state ->
+            state.copy(
+                backStack = listOf(initialTopLevelRoute()),
+                isExitDialogVisible = false,
+            )
+        }
+    }
+
+    fun showExitDialog() {
+        mutableState.update { state ->
+            if (state.isExitDialogVisible) state else state.copy(isExitDialogVisible = true)
+        }
+    }
+
     private fun navigateTo(route: AppRoute) {
         mutableState.update { state ->
             if (state.currentRoute == route) {
@@ -190,6 +245,12 @@ class AppViewModel(
                 )
             }
         }
+    }
+
+    private fun initialTopLevelRoute(): AppRoute = if (latestHasTrips) {
+        AppRoute.MyTrips
+    } else {
+        AppRoute.Planner(PlannerMode.Create)
     }
 }
 

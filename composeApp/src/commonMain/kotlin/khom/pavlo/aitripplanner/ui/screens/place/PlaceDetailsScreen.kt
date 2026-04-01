@@ -193,6 +193,14 @@ fun PlaceDetailsScreen(
                             PlaceDescriptionSection(
                                 title = strings.placeVisitDetailsTitle,
                                 text = place.visitDetailsText,
+                                actionLabel = place.websiteUrl?.normalizeWebsiteUrl()?.webViewTitle(),
+                                onActionClick = place.websiteUrl
+                                    ?.normalizeWebsiteUrl()
+                                    ?.let { websiteUrl ->
+                                        {
+                                            websiteUrlToOpen = websiteUrl
+                                        }
+                                    },
                             )
                         }
                     }

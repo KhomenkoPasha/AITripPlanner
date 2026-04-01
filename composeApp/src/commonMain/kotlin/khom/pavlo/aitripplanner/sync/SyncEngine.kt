@@ -5,14 +5,30 @@ import khom.pavlo.aitripplanner.data.local.TripLocalDataSource
 import khom.pavlo.aitripplanner.data.remote.TripsRemoteDataSource
 import khom.pavlo.aitripplanner.domain.model.AppSyncState
 import khom.pavlo.aitripplanner.domain.model.SyncTrigger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 interface BackgroundSyncScheduler {
     suspend fun scheduleSync(trigger: SyncTrigger)
+}
+
+class ImmediateBackgroundSyncScheduler(
+    private val syncEngine: SyncEngine,
+) : BackgroundSyncScheduler {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    override suspend fun scheduleSync(trigger: SyncTrigger) {
+        scope.launch {
+            syncEngine.requestSync(trigger)
+        }
+    }
 }
 
 interface SyncEngine {
@@ -61,9 +77,13 @@ class TripSyncEngine(
             runCatching {
                 remoteDataSource.fetchTrips()
             }.onSuccess { trips ->
-                if (trips.isNotEmpty()) {
-                    localDataSource.replaceTrips(trips)
-                }
+                val protectedTripIds = localDataSource.listPendingSyncItems()
+                    .map { item -> item.entityId }
+                    .toSet()
+                localDataSource.mergeRemoteTrips(
+                    remoteTrips = trips,
+                    protectedTripIds = protectedTripIds,
+                )
             }.onFailure { error ->
                 mutableState.value = mutableState.value.copy(
                     lastError = error.message ?: "Refresh failed",

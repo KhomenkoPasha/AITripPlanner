@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,19 +89,19 @@ fun SavedTripsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(TravelTheme.spacing.xs)) {
-                    LanguageSelector(
-                        selectedLanguage = selectedLanguage,
-                        label = strings.languageLabel,
-                        onLanguageSelected = onLanguageSelected,
-                    )
-                    ThemeSelector(
-                        selectedTheme = selectedTheme,
-                        label = strings.themeLabel,
-                        systemLabel = strings.themeSystemLabel,
-                        lightLabel = strings.themeLightLabel,
-                        darkLabel = strings.themeDarkLabel,
-                        onThemeSelected = onThemeSelected,
-                    )
+                        LanguageSelector(
+                            selectedLanguage = selectedLanguage,
+                            label = strings.languageLabel,
+                            onLanguageSelected = onLanguageSelected,
+                        )
+                        ThemeSelector(
+                            selectedTheme = selectedTheme,
+                            label = strings.themeLabel,
+                            systemLabel = strings.themeSystemLabel,
+                            lightLabel = strings.themeLightLabel,
+                            darkLabel = strings.themeDarkLabel,
+                            onThemeSelected = onThemeSelected,
+                        )
                     }
                 }
             }

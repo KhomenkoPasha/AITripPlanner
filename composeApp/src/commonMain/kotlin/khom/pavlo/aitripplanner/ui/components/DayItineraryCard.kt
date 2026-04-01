@@ -196,6 +196,8 @@ fun DayItineraryCard(
                             photoContentDescription = photoContentDescription,
                             photoAttributionPrefix = photoAttributionPrefix,
                             deleteLabel = deleteLabel,
+                            showTopRouteLine = index > 0,
+                            showBottomRouteLine = index < day.places.lastIndex,
                             onClick = { onPlaceClick(place.id) },
                             onCompletionChange = { completed ->
                                 onPlaceCompletionChange(place.id, completed)

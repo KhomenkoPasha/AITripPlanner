@@ -30,6 +30,7 @@ internal fun Trip.toOverviewUi(
     durationLabel = formatDuration(durationMinutes, language),
     distanceLabel = formatDistance(distanceKm, language),
     syncLabel = if (isPendingSync) language.pendingSyncLabel() else language.syncedLabel(),
+    isFavorite = isFavorite,
     isDeleting = isDeleting,
 )
 

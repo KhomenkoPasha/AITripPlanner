@@ -12,6 +12,7 @@ data class TripOverviewUiModel(
     val durationLabel: String,
     val distanceLabel: String,
     val syncLabel: String,
+    val isFavorite: Boolean,
     val isDeleting: Boolean = false,
 )
 

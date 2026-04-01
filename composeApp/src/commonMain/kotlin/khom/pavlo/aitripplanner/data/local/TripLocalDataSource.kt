@@ -18,6 +18,7 @@ import androidx.room.Transactor
 import androidx.room.useWriterConnection
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
@@ -76,16 +77,22 @@ class TripLocalDataSource(
         upsertTripInternal(trip)
     }
 
-    suspend fun deleteTrip(tripId: String) {
+    suspend fun deleteTrip(
+        tripId: String,
+        deleteSyncItem: SyncQueueItem? = null,
+    ) {
         database.useWriterConnection { connection ->
             connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
-            val existingDayIds = tripDao.selectDayIdsByTripId(tripId)
-            existingDayIds.forEach { dayId ->
-                tripDao.deletePlacesByDayId(dayId)
-            }
-            tripDao.deleteDaysByTripId(tripId)
-            tripDao.deleteSyncItemsByEntityId(tripId)
-            tripDao.deleteTripById(tripId)
+                val existingDayIds = tripDao.selectDayIdsByTripId(tripId)
+                existingDayIds.forEach { dayId ->
+                    tripDao.deletePlacesByDayId(dayId)
+                }
+                tripDao.deleteDaysByTripId(tripId)
+                tripDao.deleteSyncItemsByEntityId(tripId)
+                if (deleteSyncItem != null) {
+                    insertSyncItem(deleteSyncItem)
+                }
+                tripDao.deleteTripById(tripId)
             }
         }
     }
@@ -93,14 +100,37 @@ class TripLocalDataSource(
     suspend fun replaceTrips(trips: List<Trip>) {
         database.useWriterConnection { connection ->
             connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
-            tripDao.deleteAllPlaces()
-            tripDao.deleteAllDays()
-            tripDao.deleteAllTrips()
-            trips.forEach { trip ->
-                insertFullTrip(trip)
-            }
+                tripDao.deleteAllPlaces()
+                tripDao.deleteAllDays()
+                tripDao.deleteAllTrips()
+                trips.forEach { trip ->
+                    insertFullTrip(trip)
+                }
             }
         }
+    }
+
+    suspend fun mergeRemoteTrips(
+        remoteTrips: List<Trip>,
+        protectedTripIds: Set<String>,
+    ) {
+        val currentTrips = observeTrips().first()
+        val currentTripsById = currentTrips.associateBy(Trip::id)
+        val protectedTrips = currentTrips.filter { trip -> trip.id in protectedTripIds }
+        val mergedTrips = buildList {
+            addAll(
+                remoteTrips
+                    .filterNot { trip -> trip.id in protectedTripIds }
+                    .map { remoteTrip ->
+                        currentTripsById[remoteTrip.id]
+                            ?.let(remoteTrip::withLocalPlaceCompletion)
+                            ?: remoteTrip
+                    },
+            )
+            addAll(protectedTrips)
+        }.sortedByDescending { trip -> trip.updatedAtEpochMillis }
+
+        replaceTrips(mergedTrips)
     }
 
     suspend fun setDayExpanded(dayId: String, expanded: Boolean) {
@@ -108,6 +138,49 @@ class TripLocalDataSource(
     }
 
     suspend fun enqueueSync(item: SyncQueueItem) {
+        insertSyncItem(item)
+    }
+
+    suspend fun listPendingSyncItems(): List<SyncQueueItem> =
+        tripDao.selectPendingSyncItems().map { row -> row.toDomain() }
+
+    suspend fun completeSync(queueId: String, tripId: String, syncedAt: Long) {
+        database.useWriterConnection { connection ->
+            connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
+                tripDao.deleteSyncItem(queueId)
+                tripDao.markTripSynced(
+                    tripId = tripId,
+                    isPendingSync = false,
+                    updatedAt = syncedAt,
+                )
+            }
+        }
+    }
+
+    suspend fun markSyncRetry(queueId: String, attemptCount: Int, error: String) {
+        tripDao.markSyncRetry(
+            queueId = queueId,
+            state = SyncQueueState.RETRY.name,
+            attemptCount = attemptCount,
+            lastError = error,
+            updatedAt = PlatformTime.nowMillis(),
+        )
+    }
+
+    private suspend fun upsertTripInternal(trip: Trip) {
+        database.useWriterConnection { connection ->
+            connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
+                val existingDayIds = tripDao.selectDayIdsByTripId(trip.id)
+                existingDayIds.forEach { dayId ->
+                    tripDao.deletePlacesByDayId(dayId)
+                }
+                tripDao.deleteDaysByTripId(trip.id)
+                insertFullTrip(trip)
+            }
+        }
+    }
+
+    private suspend fun insertSyncItem(item: SyncQueueItem) {
         tripDao.insertSyncItem(
             SyncQueueEntity(
                 id = item.id,
@@ -126,45 +199,6 @@ class TripLocalDataSource(
         )
     }
 
-    suspend fun listPendingSyncItems(): List<SyncQueueItem> =
-        tripDao.selectPendingSyncItems().map { row -> row.toDomain() }
-
-    suspend fun completeSync(queueId: String, tripId: String, syncedAt: Long) {
-        database.useWriterConnection { connection ->
-            connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
-            tripDao.deleteSyncItem(queueId)
-            tripDao.markTripSynced(
-                tripId = tripId,
-                isPendingSync = false,
-                updatedAt = syncedAt,
-            )
-            }
-        }
-    }
-
-    suspend fun markSyncRetry(queueId: String, attemptCount: Int, error: String) {
-        tripDao.markSyncRetry(
-            queueId = queueId,
-            state = SyncQueueState.RETRY.name,
-            attemptCount = attemptCount,
-            lastError = error,
-            updatedAt = PlatformTime.nowMillis(),
-        )
-    }
-
-    private suspend fun upsertTripInternal(trip: Trip) {
-        database.useWriterConnection { connection ->
-            connection.withTransaction(Transactor.SQLiteTransactionType.IMMEDIATE) {
-            val existingDayIds = tripDao.selectDayIdsByTripId(trip.id)
-            existingDayIds.forEach { dayId ->
-                tripDao.deletePlacesByDayId(dayId)
-            }
-            tripDao.deleteDaysByTripId(trip.id)
-            insertFullTrip(trip)
-            }
-        }
-    }
-
     private suspend fun insertFullTrip(trip: Trip) {
         val graph = trip.toEntities(photoStorageJson)
         tripDao.insertTrip(graph.trip)
@@ -176,3 +210,21 @@ class TripLocalDataSource(
         }
     }
 }
+
+private fun Trip.withLocalPlaceCompletion(localTrip: Trip): Trip = copy(
+    days = days.map { remoteDay ->
+        val localDay = localTrip.days.firstOrNull { it.id == remoteDay.id }
+        if (localDay == null) {
+            remoteDay
+        } else {
+            remoteDay.copy(
+                places = remoteDay.places.map { remotePlace ->
+                    localDay.places
+                        .firstOrNull { it.id == remotePlace.id }
+                        ?.let { localPlace -> remotePlace.copy(isCompleted = localPlace.isCompleted) }
+                        ?: remotePlace
+                },
+            )
+        }
+    },
+)
